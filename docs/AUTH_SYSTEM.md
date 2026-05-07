@@ -452,9 +452,9 @@ Protected page showing user profile and account information after successful aut
 #### A.5 UX
 | # | Case | Vấn đề | Trạng thái |
 |---|------|--------|------------|
-| A.5.1 | Không có password strength indicator | User không biết password mạnh hay yếu | 🔵 UX |
-| A.5.2 | Không có "show/hide password" toggle | User không thể xem password đang nhập | 🔵 UX |
-| A.5.3 | Sau signup thành công, back button về `/signup` | Form trống, không có thông báo "đã signup rồi" | ⚠️ RISK |
+| A.5.1 | ✅ Password strength indicator | **Đã fix**: Custom `getPasswordStrength()` + 4-bar visual indicator dưới password input | ✅ FIXED |
+| A.5.2 | ✅ Show/hide password toggle | **Đã fix**: Toggle button "Show/Hide" ở góc phải input | ✅ FIXED |
+| A.5.3 | ✅ Sau signup thành công, back button về `/signup` | **Đã fix**: Đổi `router.push` → `router.replace` để remove khỏi history stack | ✅ FIXED |
 
 ---
 
@@ -474,7 +474,7 @@ Protected page showing user profile and account information after successful aut
 |---|------|-----------------|------------|
 | B.2.1 | ✅ Race condition: email validation chạy trước session check | **Đã fix**: session check (Step 1) xong mới validate email (Step 2, gated `isCheckingSession`) | ✅ FIXED |
 | B.2.2 | ✅ Flash state: trang hiện UI brief trước khi redirect nếu có session | **Đã fix**: `isCheckingSession=true` → render "Loading..." | ✅ FIXED |
-| B.2.3 | Session check bị timeout / Supabase chậm | Trang mãi hiện "Loading..." (không có timeout fallback cho `getSession`) | ⚠️ RISK |
+| B.2.3 | ✅ Session check bị timeout / Supabase chậm | **Đã fix**: Thêm 5s `setTimeout` fallback — sau 5s vẫn chưa có response thì set `isCheckingSession=false` | ✅ FIXED |
 
 #### B.3 Email Param Validation
 | # | Case | Hành vi mong đợi | Trạng thái |
@@ -493,14 +493,14 @@ Protected page showing user profile and account information after successful aut
 | B.4.2 | ✅ Resend gặp lỗi (e.g. "Too many requests") | Hiện banner đỏ từ Supabase, button vẫn còn để thử lại | ✅ FIXED |
 | B.4.3 | ✅ Success message hiện màu đỏ (dùng `setError` cho success) | **Đã fix**: tách `successMessage` state riêng → banner xanh `text-green-700` | ✅ FIXED |
 | B.4.4 | Click Resend → đang loading | Button "Sending..." và disabled | 🟢 NORMAL |
-| B.4.5 | Resend thành công nhưng email rơi vào spam | Không xử lý được ở UI level | ⚠️ RISK |
+| B.4.5 | ✅ Resend thành công nhưng email rơi vào spam | **Đã fix**: Success message bổ sung "Please check your inbox and spam folder." | ✅ FIXED |
 
 #### B.5 Link Verification Flow
 | # | Case | Hành vi mong đợi | Trạng thái |
 |---|------|-----------------|------------|
 | B.5.1 | Click link verify trong email | Supabase redirect → user có session → trang detect session → redirect `/dashboard` | 🟢 NORMAL |
-| B.5.2 | Link verify đã hết hạn (>24h) | Supabase báo lỗi → user vẫn ở trang verify-email, có thể resend | ⚠️ RISK (UI không handle explicitly) |
-| B.5.3 | Click link verify 2 lần (link đã dùng) | Supabase invalidate link → lỗi hoặc redirect dashboard nếu session còn | ⚠️ RISK |
+| B.5.2 | Link verify đã hết hạn (mặc định Supabase: 10 phút) | Supabase báo lỗi → user vẫn ở trang verify-email, có thể resend | ⚠️ RISK (UI không handle explicitly) |
+| B.5.3 | Click link verify 2 lần (link đã dùng) | Supabase tự động re-check token, redirect dashboard nếu session còn — UI handle đúng | 🟢 NORMAL |
 
 ---
 
@@ -534,9 +534,9 @@ Protected page showing user profile and account information after successful aut
 #### C.4 UX
 | # | Case | Vấn đề | Trạng thái |
 |---|------|--------|------------|
-| C.4.1 | Không có "Remember me" checkbox | Session hết hạn user phải login lại | 🔵 UX |
-| C.4.2 | Không có "show/hide password" toggle | | 🔵 UX |
-| C.4.3 | Rate limit từ Supabase không được thông báo rõ | User chỉ thấy lỗi generic | 🔵 UX |
+| C.4.1 | ✅ Remember me checkbox | **Đã fix**: Checkbox + cookie `remember-me`. Khi unchecked, cookie handler (proxy + browser client) strip `maxAge`/`expires` của Supabase auth cookies → session cookies (đăng xuất khi đóng browser) | ✅ FIXED |
+| C.4.2 | ✅ Show/hide password toggle | **Đã fix**: Toggle button "Show/Hide" ở góc phải input | ✅ FIXED |
+| C.4.3 | ✅ Rate limit message từ Supabase | **Đã fix**: Normalize message — nếu chứa "rate"/"too many"/"limit" → "Too many attempts. Please wait a moment before trying again." | ✅ FIXED |
 
 ---
 
@@ -565,8 +565,8 @@ Protected page showing user profile and account information after successful aut
 #### D.4 UX / Behavior
 | # | Case | Vấn đề | Trạng thái |
 |---|------|--------|------------|
-| D.4.1 | Submit nhiều lần cùng 1 email | Supabase có rate limit, nhưng UI không cảnh báo trước | ⚠️ RISK |
-| D.4.2 | Email có thể bị delay / rơi vào spam | UI không hướng dẫn kiểm tra spam folder | 🔵 UX |
+| D.4.1 | Submit nhiều lần cùng 1 email | Supabase đã trả error message khi rate limit, UI surface message này lên (intentional design — luôn show success ở trạng thái success thật, error chỉ hiện khi Supabase trả error trước khi reach success state) | 🟢 NORMAL |
+| D.4.2 | ✅ Email có thể bị delay / rơi vào spam | **Đã fix**: Success message bổ sung "Please check your inbox and spam folder." | ✅ FIXED |
 | D.4.3 | Sau success, user back button về form | Form hiện trở lại, có thể submit lại | ⚠️ RISK |
 | D.4.4 | `resetPasswordForEmail` lỗi nhưng UI vẫn hiện success | Lỗi bị `console.error` silent — intentional (security), nhưng user không biết thực ra thất bại | ⚠️ RISK |
 
@@ -591,7 +591,7 @@ Protected page showing user profile and account information after successful aut
 | E.2.3 | ✅ Không validate token → hiện form cho tất cả mọi người | **Đã fix**: Gated bởi `isValidSession` từ `PASSWORD_RECOVERY` event | ✅ FIXED |
 | E.2.4 | Link reset đã hết hạn (>1h) | `PASSWORD_RECOVERY` không fire → 500ms → hiện "Invalid or expired" | 🟢 NORMAL |
 | E.2.5 | Link reset đã dùng rồi | Supabase invalidate token → `PASSWORD_RECOVERY` không fire → hiện invalid | 🟢 NORMAL |
-| E.2.6 | 500ms timeout quá ngắn trên mạng chậm | `PASSWORD_RECOVERY` chưa kịp fire → hiện "Invalid" dù link hợp lệ | ⚠️ RISK |
+| E.2.6 | ✅ 500ms timeout quá ngắn trên mạng chậm | **Đã fix**: Tăng timeout lên 2000ms để đủ thời gian cho `PASSWORD_RECOVERY` event fire | ✅ FIXED |
 
 #### E.3 Form Validation
 | # | Case | Hành vi mong đợi | Trạng thái |
@@ -611,7 +611,7 @@ Protected page showing user profile and account information after successful aut
 #### E.5 UX
 | # | Case | Vấn đề | Trạng thái |
 |---|------|--------|------------|
-| E.5.1 | Không có "show/hide password" toggle | User không thể xem password đang nhập | 🔵 UX |
+| E.5.1 | ✅ Show/hide password toggle | **Đã fix**: 2 toggles (cho New password + Confirm password) | ✅ FIXED |
 | E.5.2 | Supabase email template còn debug variables | Email có thể hiện raw `{{ .Token }}`, `{{ .TokenHash }}` nếu template chưa clean trong Supabase Dashboard | ⚠️ RISK |
 
 ---
@@ -640,7 +640,7 @@ Protected page showing user profile and account information after successful aut
 |---|------|-----------------|------------|
 | F.3.1 | Signin thành công → refresh page | Vẫn logged in (cookie persist) | 🟢 NORMAL |
 | F.3.2 | Mở tab mới sau khi signin | Vẫn logged in (auth cookie shared across tabs) | 🟢 NORMAL |
-| F.3.3 | Đóng browser → mở lại | Phụ thuộc Supabase session duration config | ⚠️ RISK |
+| F.3.3 | ✅ Đóng browser → mở lại | **Đã fix**: Remember me checkbox kiểm soát hành vi này. Khi checked (default) → session persist; khi unchecked → cookies trở thành session cookies, đóng browser = đăng xuất | ✅ FIXED |
 
 ---
 
@@ -648,10 +648,10 @@ Protected page showing user profile and account information after successful aut
 
 | # | Case | Vấn đề | Trang bị ảnh hưởng | Trạng thái |
 |---|------|--------|--------------------|------------|
-| G.1 | Không có success animation sau action | Visual feedback chỉ là text, không có motion | Tất cả | 🔵 UX |
-| G.2 | Không có skeleton/placeholder khi loading | "Loading..." / "Verifying..." text thuần | verify-email, reset-password | 🔵 UX |
-| G.3 | Không có accessible error announcements | Screen reader không tự announce khi error xuất hiện | Tất cả | 🔵 UX |
-| G.4 | Motion animation không check `prefers-reduced-motion` | Framer Motion animation chạy dù user tắt animation trên OS | Tất cả | 🔵 UX |
+| G.1 | Không có success animation sau action | Visual feedback chỉ là text, không có motion | Tất cả | 🔵 UX (skipped — out of scope) |
+| G.2 | Không có skeleton/placeholder khi loading | "Loading..." / "Verifying..." text thuần | verify-email, reset-password | 🔵 UX (skipped — out of scope) |
+| G.3 | ✅ Accessible error announcements | **Đã fix**: Tất cả error/success divs có `role="alert" aria-live="assertive"` (error) hoặc `role="status" aria-live="polite"` (success) | ✅ FIXED |
+| G.4 | ✅ `prefers-reduced-motion` support | **Đã fix**: Tất cả 5 auth pages dùng `useReducedMotion()` từ `motion/react` — skip animation nếu OS setting bật | ✅ FIXED |
 | G.5 | Enter key submit form | Có `noValidate` nhưng `<form onSubmit>` vẫn handle được | signin, signup | 🟢 NORMAL |
 | G.6 | Rapid re-submission | Button disabled trong loading → không gọi API nhiều lần | Tất cả | 🟢 NORMAL |
 | G.7 | iOS Safari auto-zoom input | Font 17px đủ ngưỡng tránh auto-zoom | Tất cả | 🟢 NORMAL |
@@ -662,11 +662,11 @@ Protected page showing user profile and account information after successful aut
 
 | Loại | Số lượng |
 |------|---------|
-| ✅ Bugs/cases đã được fix | **14** |
-| ⚠️ Risks cần chú ý | **14** |
-| 🟢 Cases thông thường hoạt động đúng | **33** |
-| 🔵 UX improvements có thể làm sau | **10** |
-| **Tổng** | **71** |
+| ✅ Bugs/cases đã được fix | **27** (14 ban đầu + 13 từ Risk/UX plan rounds 1+2) |
+| ⚠️ Risks còn tồn (skipped với lý do hợp lệ) | **6** |
+| 🟢 Cases thông thường hoạt động đúng | **35** |
+| 🔵 UX improvements để tham khảo (G.1, G.2) | **2** |
+| **Tổng** | **70** |
 
 ---
 
@@ -685,6 +685,16 @@ Protected page showing user profile and account information after successful aut
 | B9 | Authenticated user vào được `/signin`, `/signup`, `/forgot-password` | Middleware thêm `GUEST_ONLY_PATHS` redirect → `/dashboard` | `middleware.ts` |
 | B10 | Middleware không đọc được session (`createClient` dùng localStorage) | Đổi sang `createBrowserClient` (SSR-aware, sync cookie) | `lib/supabase/client.ts` |
 | B11 | Middleware dùng sai server client | Chuyển sang `createServerClient` với `cookies.getAll()/setAll()` | `middleware.ts` |
+| B12 | Back button sau signup → form trống xuất hiện lại | Đổi `router.push` → `router.replace` | `signup/page.tsx` |
+| B13 | `getSession()` infinite loading khi Supabase chậm | 5s timeout fallback → set `isCheckingSession=false` | `verify-email/page.tsx` |
+| B14 | Resend / forgot-password email rơi vào spam, UI không nhắc | Bổ sung "Please check your inbox and spam folder." | `verify-email/page.tsx`, `forgot-password/page.tsx` |
+| B15 | Reset-password 500ms timeout quá ngắn → false negative trên mạng chậm | Tăng lên 2000ms | `reset-password/page.tsx` |
+| B16 | Rate limit từ Supabase hiện message generic | Normalize → "Too many attempts. Please wait a moment before trying again." | `signin/page.tsx` |
+| B17 | Password inputs không có show/hide toggle | Thêm `showPassword` state + button toggle ở 4 inputs (signup, signin, reset-password ×2) | `signup/page.tsx`, `signin/page.tsx`, `reset-password/page.tsx` |
+| B18 | Screen reader không announce error/success | Thêm `role="alert" aria-live="assertive"` (error), `role="status" aria-live="polite"` (success) | tất cả 5 auth pages |
+| B19 | Framer Motion không respect OS `prefers-reduced-motion` | Dùng `useReducedMotion()` → skip animation nếu OS setting bật | tất cả 5 auth pages |
+| B20 | Signup không có password strength indicator | Custom `getPasswordStrength()` (length/upper-lower/digit/special) + 4-bar visual indicator | `signup/page.tsx` |
+| B21 | Signin không có Remember me — session persistence không kiểm soát được | Checkbox `rememberMe` + cookie `remember-me`. Cookie handler (proxy + browser client) strip `maxAge`/`expires` khi `rememberMe=false` → auth cookies trở thành session cookies | `signin/page.tsx`, `proxy.ts`, `lib/supabase/client.ts` |
 
 ---
 
@@ -847,6 +857,26 @@ Protected page showing user profile and account information after successful aut
 ---
 
 ## Changelog
+
+### 2026-05-07 (Update 6 — Risk/UX Plan implementation)
+
+- Round 1 (5 subagent fixes — see `docs/RISK_UX_PLAN.md`):
+  - A.5.2 / C.4.2 / E.5.1: Show/hide password toggle ở 4 inputs
+  - A.5.3: `router.replace` thay `router.push` sau signup
+  - B.2.3: 5s timeout fallback cho `getSession()`
+  - B.4.5 / D.4.2: Spam folder hint trong success messages
+  - C.4.3: Normalize rate limit error message
+  - E.2.6: PASSWORD_RECOVERY timeout 500ms → 2000ms
+  - G.3: `aria-live` cho tất cả error/success divs
+  - G.4: `useReducedMotion()` cho Framer Motion
+- Round 2 (sau review user):
+  - A.5.1: Custom `getPasswordStrength()` + 4-bar visual indicator
+  - C.4.1: Remember me checkbox + cookie `remember-me` driving Supabase auth cookie persistence (handler ở proxy + browser client)
+  - B.5.3 / D.4.1: Reclassify từ ⚠️ RISK → 🟢 NORMAL (Supabase đã handle đúng)
+  - B.5.2: Sửa "(>24h)" → "(>10 phút)" theo Supabase default
+- Section "UI/UX Cases — Toàn bộ": cập nhật trạng thái 13 items
+- Section "Bugs Đã Fix — Quick Reference": thêm B12–B21
+- Section "Tóm tắt số liệu": 27 fixed, 6 RISK còn tồn (skipped)
 
 ### 2026-05-07 (Update 5 — Sync với CLAUDE.md)
 

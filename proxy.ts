@@ -8,9 +8,12 @@ const PROTECTED_PATHS = ["/dashboard"];
 // Routes only for guests (redirect to dashboard if already logged in)
 const GUEST_ONLY_PATHS = ["/signin", "/signup", "/forgot-password"];
 
-export async function middleware(req: NextRequest) {
+const REMEMBER_COOKIE = "remember-me";
+
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
   const { pathname } = req.nextUrl;
+  const rememberMe = req.cookies.get(REMEMBER_COOKIE)?.value !== "false";
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,8 +25,13 @@ export async function middleware(req: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
+            const shouldStripPersistence =
+              !rememberMe && options.maxAge !== 0 && value !== "";
+            const finalOptions = shouldStripPersistence
+              ? { ...options, maxAge: undefined, expires: undefined }
+              : options;
             req.cookies.set(name, value);
-            res.cookies.set(name, value, options);
+            res.cookies.set(name, value, finalOptions);
           });
         },
       },

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -16,12 +16,16 @@ const BUTTON_WHILE_TAP = { scale: 0.95 };
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
+  const prefersReduced = useReducedMotion();
+  const motionProps = prefersReduced ? {} : MOTION_PROPS;
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -31,10 +35,10 @@ export default function ResetPasswordPage() {
       }
     });
 
-    // Fallback: if no PASSWORD_RECOVERY fires within 500ms, link is invalid
+    // Fallback: if no PASSWORD_RECOVERY fires within 2000ms, link is invalid
     const timeout = setTimeout(() => {
       setIsChecking(false);
-    }, 500);
+    }, 2000);
 
     return () => {
       subscription.unsubscribe();
@@ -79,7 +83,7 @@ export default function ResetPasswordPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-[#ffffff] text-[#1d1d1f] flex items-center justify-center p-6" style={{ fontFamily: '"SF Pro Text", system-ui, -apple-system, sans-serif' }}>
-        <motion.div {...MOTION_PROPS} className="w-full max-w-[440px]">
+        <motion.div {...motionProps} className="w-full max-w-[440px]">
           <div className="mb-[80px] text-center">
             <h1 className="text-[40px] leading-[1.1] font-semibold tracking-[-0.28px]" style={{ fontFamily: '"SF Pro Display", system-ui, -apple-system, sans-serif' }}>
               Password Updated
@@ -108,7 +112,7 @@ export default function ResetPasswordPage() {
   if (!isValidSession) {
     return (
       <div className="min-h-screen bg-[#ffffff] text-[#1d1d1f] flex items-center justify-center p-6" style={{ fontFamily: '"SF Pro Text", system-ui, -apple-system, sans-serif' }}>
-        <motion.div {...MOTION_PROPS} className="w-full max-w-[440px] text-center space-y-4">
+        <motion.div {...motionProps} className="w-full max-w-[440px] text-center space-y-4">
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-[15px]">
             Invalid or expired reset link. Please request a new one.
           </div>
@@ -126,7 +130,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[#ffffff] text-[#1d1d1f] flex items-center justify-center p-6" style={{ fontFamily: '"SF Pro Text", system-ui, -apple-system, sans-serif' }}>
-      <motion.div {...MOTION_PROPS} className="w-full max-w-[440px]">
+      <motion.div {...motionProps} className="w-full max-w-[440px]">
         <div className="mb-[80px] text-center">
           <h1 className="text-[40px] leading-[1.1] font-semibold tracking-[-0.28px]" style={{ fontFamily: '"SF Pro Display", system-ui, -apple-system, sans-serif' }}>
             Reset Password
@@ -137,7 +141,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
+          <div role="alert" aria-live="assertive" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
             {error}
           </div>
         )}
@@ -149,20 +153,40 @@ export default function ResetPasswordPage() {
             await handleResetPassword();
           }}
         >
-          <input
-            type="password"
-            placeholder="New password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(""); }}
-            className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]"
-          />
-          <input
-            type="password"
-            placeholder="Confirm password"
-            value={confirmPassword}
-            onChange={(e) => { setConfirmPassword(e.target.value); setError(""); }}
-            className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="New password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(""); }}
+              className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 pr-12 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6e6e73] text-[13px] focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => { setConfirmPassword(e.target.value); setError(""); }}
+              className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 pr-12 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(v => !v)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6e6e73] text-[13px] focus:outline-none"
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            >
+              {showConfirmPassword ? "Hide" : "Show"}
+            </button>
+          </div>
           <motion.button
             type="submit"
             whileTap={BUTTON_WHILE_TAP}

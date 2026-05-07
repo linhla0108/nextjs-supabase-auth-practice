@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { supabase } from "@/lib/supabase/client";
 
 const MOTION_PROPS = {
@@ -17,6 +17,9 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const prefersReduced = useReducedMotion();
+  const motionProps = prefersReduced ? {} : MOTION_PROPS;
 
   async function handleForgotPassword(emailValue: string) {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
@@ -47,7 +50,7 @@ export default function ForgotPasswordPage() {
         fontFamily: '"SF Pro Text", system-ui, -apple-system, sans-serif',
       }}
     >
-      <motion.div {...MOTION_PROPS} className="w-full max-w-[440px]">
+      <motion.div {...motionProps} className="w-full max-w-[440px]">
         <div className="mb-[80px] text-center">
           <h1
             className="text-[40px] leading-[1.1] font-semibold tracking-[-0.28px]"
@@ -65,8 +68,8 @@ export default function ForgotPasswordPage() {
 
         {isSuccess ? (
           <div className="text-center space-y-4">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-[17px]">
-              Password reset email sent!
+            <div role="status" aria-live="polite" className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-[17px]">
+              Password reset email sent! Please check your inbox and spam folder.
             </div>
             <Link href="/signin" className="text-[#0066cc] text-[17px]">
               Back to Sign in
@@ -75,7 +78,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <>
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
+              <div role="alert" aria-live="assertive" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
                 {error}
               </div>
             )}

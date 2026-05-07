@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -18,17 +18,28 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const router = useRouter();
+  const prefersReduced = useReducedMotion();
+  const motionProps = prefersReduced ? {} : MOTION_PROPS;
 
   async function handleSignIn(emailValue: string, passwordValue: string) {
+    // Set Remember-me preference cookie BEFORE signIn so cookie handlers
+    // (browser client + proxy) can decide whether to persist auth cookies.
+    document.cookie = `remember-me=${rememberMe ? "true" : "false"}; path=/; max-age=31536000; samesite=lax`;
+
     const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email: emailValue,
       password: passwordValue,
     });
 
     if (signInError) {
-      const message = signInError.message === "Invalid login credentials" 
+      const lowerMsg = signInError.message.toLowerCase();
+      const message = signInError.message === "Invalid login credentials"
         ? "Invalid email or password."
+        : lowerMsg.includes("rate") || lowerMsg.includes("too many") || lowerMsg.includes("limit")
+        ? "Too many attempts. Please wait a moment before trying again."
         : signInError.message;
       throw new Error(message);
     }
@@ -57,7 +68,7 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen bg-[#ffffff] text-[#1d1d1f] flex items-center justify-center p-6" style={{ fontFamily: '"SF Pro Text", system-ui, -apple-system, sans-serif' }}>
       <motion.div
-        {...MOTION_PROPS}
+        {...motionProps}
         className="w-full max-w-[440px]"
       >
         <div className="mb-[80px] text-center">
@@ -65,7 +76,7 @@ export default function SignInPage() {
           <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.374px]">Sign in to continue participating in the event.</p>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">{error}</div>}
+        {error && <div role="alert" aria-live="assertive" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">{error}</div>}
 
         <form
           className="space-y-[24px]"
@@ -91,14 +102,34 @@ export default function SignInPage() {
             onChange={(e) => { setEmail(e.target.value); setError(""); }}
             className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]"
           />
-          <input
-            type="password"
-            required
-            placeholder="Password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(""); }}
-            className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              placeholder="Password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(""); }}
+              className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 pr-12 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6e6e73] text-[13px] focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none text-[15px] leading-[1.47] tracking-[-0.374px] text-[#1d1d1f]">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-[18px] w-[18px] rounded border-[#d2d2d7] text-[#0066cc] focus:ring-2 focus:ring-[#0071e3] cursor-pointer"
+            />
+            Remember me
+          </label>
 
           <motion.button
             type="submit"

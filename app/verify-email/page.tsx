@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -22,16 +22,25 @@ export default function VerifyEmailPage() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const prefersReduced = useReducedMotion();
+  const motionProps = prefersReduced ? {} : MOTION_PROPS;
 
   // Step 1: Check session first — if already verified, redirect immediately
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setIsCheckingSession(false);
+    }, 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeoutId);
       if (session) {
         router.push("/dashboard");
         return;
       }
       setIsCheckingSession(false);
     });
+
+    return () => clearTimeout(timeoutId);
   }, [router]);
 
   // Step 2: Validate email param only after confirming no active session
@@ -59,7 +68,7 @@ export default function VerifyEmailPage() {
 
       if (resendError) throw new Error(resendError.message);
 
-      setSuccessMessage("Verification email resent. Please check your inbox.");
+      setSuccessMessage("Verification email resent. Please check your inbox and spam folder.");
       setIsSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend email.");
@@ -78,11 +87,11 @@ export default function VerifyEmailPage() {
 
   return (
     <div className="min-h-screen bg-[#ffffff] text-[#1d1d1f] flex items-center justify-center p-6" style={{ fontFamily: '"SF Pro Text", system-ui, -apple-system, sans-serif' }}>
-      <motion.div {...MOTION_PROPS} className="w-full max-w-[440px] text-center">
+      <motion.div {...motionProps} className="w-full max-w-[440px] text-center">
         {!isValidEmail ? (
           <>
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
+              <div role="alert" aria-live="assertive" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
                 {error}
               </div>
             )}
@@ -104,12 +113,12 @@ export default function VerifyEmailPage() {
             </p>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
+              <div role="alert" aria-live="assertive" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">
                 {error}
               </div>
             )}
             {successMessage && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-[15px]">
+              <div role="status" aria-live="polite" className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-[15px]">
                 {successMessage}
               </div>
             )}
