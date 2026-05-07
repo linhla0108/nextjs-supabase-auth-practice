@@ -16,6 +16,7 @@ vi.mock("@/lib/supabase/client", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
+    replace: vi.fn(),
   }),
 }));
 
@@ -26,40 +27,20 @@ describe("SignUpPage - Validation & Form Handling", () => {
 
   it("should render signup form with all required fields", () => {
     render(<SignUpPage />);
-    
-    expect(screen.getByPlaceholderText(/full name/i)).toBeInTheDocument();
+
     expect(screen.getByPlaceholderText(/email/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign up/i })).toBeInTheDocument();
-  });
-
-  it("should validate name field - minimum 2 characters", async () => {
-    const user = userEvent.setup();
-    render(<SignUpPage />);
-
-    const nameInput = screen.getByPlaceholderText(/full name/i);
-    const emailInput = screen.getByPlaceholderText(/email/i);
-    const passwordInput = screen.getByPlaceholderText(/password/i);
-    const submitBtn = screen.getByRole("button", { name: /sign up/i });
-
-    await user.type(nameInput, "A");
-    await user.type(emailInput, "test@example.com");
-    await user.type(passwordInput, "password123");
-    await user.click(submitBtn);
-
-    expect(await screen.findByText(/name must be at least 2 characters/i)).toBeInTheDocument();
   });
 
   it("should validate password length - minimum 6 characters", async () => {
     const user = userEvent.setup();
     render(<SignUpPage />);
 
-    const nameInput = screen.getByPlaceholderText(/full name/i);
     const emailInput = screen.getByPlaceholderText(/email/i);
     const passwordInput = screen.getByPlaceholderText(/password/i);
     const submitBtn = screen.getByRole("button", { name: /sign up/i });
 
-    await user.type(nameInput, "John Doe");
     await user.type(emailInput, "john@example.com");
     await user.type(passwordInput, "12345");
     await user.click(submitBtn);
@@ -71,40 +52,35 @@ describe("SignUpPage - Validation & Form Handling", () => {
     const user = userEvent.setup();
     render(<SignUpPage />);
 
-    const nameInput = screen.getByPlaceholderText(/full name/i);
     const emailInput = screen.getByPlaceholderText(/email/i);
     const passwordInput = screen.getByPlaceholderText(/password/i);
     const submitBtn = screen.getByRole("button", { name: /sign up/i });
 
-    await user.type(nameInput, "A");
-    await user.type(emailInput, "test@example.com");
+    await user.type(emailInput, "invalid");
     await user.type(passwordInput, "password123");
     await user.click(submitBtn);
-    expect(await screen.findByText(/name must be at least 2 characters/i)).toBeInTheDocument();
+    expect(await screen.findByText(/invalid email format/i)).toBeInTheDocument();
 
-    await user.type(nameInput, "o");
+    await user.type(emailInput, "@example.com");
     await waitFor(() => {
-      expect(screen.queryByText(/name must be at least 2 characters/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/invalid email format/i)).not.toBeInTheDocument();
     });
   });
 
   it("should disable submit button while loading", async () => {
     const user = userEvent.setup();
     const { supabase } = await import("@/lib/supabase/client");
-    
-    // Mock signUp to delay response
+
     vi.mocked(supabase.auth.signUp).mockImplementationOnce(
       () => new Promise(resolve => setTimeout(() => resolve({ data: { user: null }, error: null }), 1000))
     );
 
     render(<SignUpPage />);
 
-    const nameInput = screen.getByPlaceholderText(/full name/i);
     const emailInput = screen.getByPlaceholderText(/email/i);
     const passwordInput = screen.getByPlaceholderText(/password/i);
     const submitBtn = screen.getByRole("button", { name: /sign up/i });
 
-    await user.type(nameInput, "John Doe");
     await user.type(emailInput, "john@example.com");
     await user.type(passwordInput, "password123");
     await user.click(submitBtn);
@@ -130,7 +106,6 @@ describe("SignUpPage - API Integration", () => {
 
     render(<SignUpPage />);
 
-    await user.type(screen.getByPlaceholderText(/full name/i), "John Doe");
     await user.type(screen.getByPlaceholderText(/email/i), "john@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /sign up/i }));
@@ -140,7 +115,6 @@ describe("SignUpPage - API Integration", () => {
         email: "john@example.com",
         password: "password123",
         options: {
-          data: { full_name: "John Doe" },
           emailRedirectTo: expect.stringContaining("/verify-email"),
         },
       });
@@ -158,7 +132,6 @@ describe("SignUpPage - API Integration", () => {
 
     render(<SignUpPage />);
 
-    await user.type(screen.getByPlaceholderText(/full name/i), "Jane Doe");
     await user.type(screen.getByPlaceholderText(/email/i), "jane@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /sign up/i }));
@@ -170,12 +143,10 @@ describe("SignUpPage - API Integration", () => {
     const user = userEvent.setup();
     render(<SignUpPage />);
 
-    const nameInput = screen.getByPlaceholderText(/full name/i);
     const emailInput = screen.getByPlaceholderText(/email/i);
     const passwordInput = screen.getByPlaceholderText(/password/i);
     const submitBtn = screen.getByRole("button", { name: /sign up/i });
 
-    await user.type(nameInput, "John Doe");
     await user.type(emailInput, "invalid-email");
     await user.type(passwordInput, "password123");
     await user.click(submitBtn);
@@ -194,7 +165,6 @@ describe("SignUpPage - API Integration", () => {
 
     render(<SignUpPage />);
 
-    await user.type(screen.getByPlaceholderText(/full name/i), "Existing User");
     await user.type(screen.getByPlaceholderText(/email/i), "existing@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /sign up/i }));
@@ -213,7 +183,6 @@ describe("SignUpPage - API Integration", () => {
 
     render(<SignUpPage />);
 
-    await user.type(screen.getByPlaceholderText(/full name/i), "Existing User");
     await user.type(screen.getByPlaceholderText(/email/i), "existing@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /sign up/i }));
@@ -234,7 +203,6 @@ describe("SignUpPage - API Integration", () => {
 
     render(<SignUpPage />);
 
-    await user.type(screen.getByPlaceholderText(/full name/i), "John Doe");
     await user.type(screen.getByPlaceholderText(/email/i), "john@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /sign up/i }));
@@ -244,7 +212,6 @@ describe("SignUpPage - API Integration", () => {
         email: "john@example.com",
         password: "password123",
         options: {
-          data: { full_name: "John Doe" },
           emailRedirectTo: expect.stringContaining("/verify-email"),
         },
       });

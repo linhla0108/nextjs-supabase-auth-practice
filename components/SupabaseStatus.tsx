@@ -13,7 +13,7 @@ const STATUS_CONFIG: Record<
   connecting: {
     dot: "bg-amber-400",
     glow: "shadow-[0_0_8px_2px_rgba(251,191,36,0.4)]",
-    label: "Đang kết nối...",
+    label: "Connecting...",
     bg: "bg-zinc-900/80",
     border: "border-zinc-700/60",
   },
@@ -27,7 +27,7 @@ const STATUS_CONFIG: Record<
   error: {
     dot: "bg-red-500",
     glow: "shadow-[0_0_8px_2px_rgba(239,68,68,0.4)]",
-    label: "Mất kết nối",
+    label: "Disconnected",
     bg: "bg-zinc-900/80",
     border: "border-red-500/30",
   },

@@ -29,7 +29,6 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
 }
 
 export default function SignUpPage() {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -41,14 +40,11 @@ export default function SignUpPage() {
   const motionProps = prefersReduced ? {} : MOTION_PROPS;
   const strength = getPasswordStrength(password);
 
-  async function handleSignUp(nameValue: string, emailValue: string, passwordValue: string) {
+  async function handleSignUp(emailValue: string, passwordValue: string) {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: emailValue,
       password: passwordValue,
       options: {
-        data: {
-          full_name: nameValue,
-        },
         emailRedirectTo: `${window.location.origin}/verify-email`,
       },
     });
@@ -72,11 +68,6 @@ export default function SignUpPage() {
   }
 
   function validateForm() {
-    if (name.trim().length < 2) {
-      setError("Name must be at least 2 characters.");
-      return false;
-    }
-
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Invalid email format.");
       return false;
@@ -114,7 +105,7 @@ export default function SignUpPage() {
             if (!validateForm()) return;
             setIsLoading(true);
             try {
-              await handleSignUp(name, email, password);
+              await handleSignUp(email, password);
             } catch (err) {
               setError(err instanceof Error ? err.message : "Sign up failed.");
             } finally {
@@ -122,7 +113,6 @@ export default function SignUpPage() {
             }
           }}
         >
-          <input type="text" required placeholder="Full name" value={name} onChange={(e) => { setName(e.target.value); setError(""); setIsDuplicateEmail(false); }} className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]" />
           <input type="email" required placeholder="Email" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); setIsDuplicateEmail(false); }} className="h-[44px] w-full rounded-full border border-[#e0e0e0] px-5 text-[17px] leading-[1.47] tracking-[-0.374px] outline-none focus:ring-2 focus:ring-[#0071e3]" />
           <div>
             <div className="relative">

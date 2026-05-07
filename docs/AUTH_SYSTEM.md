@@ -49,13 +49,11 @@ Allow new users to create accounts and participate in the lucky draw event.
 
 ### Input Fields
 
-- **Full Name** - text input, 44px height, pill-shaped
 - **Email** - email input, 44px height, pill-shaped
 - **Password** - password input, 44px height, pill-shaped
 
 ### Validations
 
-- Name minimum: 2 characters (after trim)
 - Email regex: `^[^\s@]+@[^\s@]+\.[^\s@]+$`
 - Password minimum: 6 characters
 
@@ -70,7 +68,7 @@ Allow new users to create accounts and participate in the lucky draw event.
 1. Redirect to `/verify-email?email=encodeURIComponent(email)`
 2. Verify-email page validates email format via regex
 
-> ⚠️ **sessionStorage không được dùng** — cross-device limitation: user signup trên máy tính, mở link resend trên điện thoại → sessionStorage rỗng → lỗi nhầm. Bảo vệ thực sự ở server-side (Supabase không gửi email cho địa chỉ chưa đăng ký). Xem `CLAUDE.md`.
+> ⚠️ **sessionStorage is not used** — cross-device limitation: a user signs up on their computer and opens the resend link on their phone → sessionStorage is empty → false error. Real protection happens server-side (Supabase does not send emails to addresses that are not registered). See `CLAUDE.md`.
 
 ### Navigation Links
 
@@ -121,9 +119,9 @@ Verify user email and allow resend if verification link was not clicked.
 
 - Email param must match regex pattern: `^[^\s@]+@[^\s@]+\.[^\s@]+$`
 - If no `?email=` param or format invalid → "Email does not exist. Please sign up again."
-- If email format valid (kể cả chưa đăng ký) → hiện verify UI bình thường
-- Bảo vệ thực sự ở server-side: Supabase không gửi email cho địa chỉ chưa đăng ký
-- **Không dùng sessionStorage gate** — cross-device limitation (xem `CLAUDE.md`)
+- If email format is valid (even if not registered) → display the verify UI normally
+- Real protection happens server-side: Supabase does not send emails to addresses that are not registered
+- **No sessionStorage gate is used** — cross-device limitation (see `CLAUDE.md`)
 
 ### States
 
@@ -203,7 +201,7 @@ Protected page showing user profile and account information after successful aut
 
 ### Features
 
-- User profile display (email, full name, username)
+- User profile display (email)
 - Email verification status
 - Sign out functionality
 
@@ -215,9 +213,7 @@ Protected page showing user profile and account information after successful aut
 ### User Information Display
 
 - **Email**: From `user.email`
-- **Full Name**: From `profile.full_name` (or "Chưa cập nhật")
-- **Username**: From `profile.username` (or "Chưa cập nhật")
-- **Email Status**: Shows "Đã xác thực" if `email_confirmed_at` exists
+- **Email Status**: Shows "Verified" if `email_confirmed_at` exists
 
 ### Sign Out
 
@@ -244,7 +240,7 @@ Protected page showing user profile and account information after successful aut
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` - Anon key (public client)
 
-> ⚠️ **Không dùng** `createClient` từ `@supabase/supabase-js` — client đó lưu session vào localStorage, middleware không đọc được.
+> ⚠️ **Do not use** `createClient` from `@supabase/supabase-js` — that client stores the session in localStorage, which the middleware cannot read.
 
 ---
 
@@ -361,9 +357,9 @@ Protected page showing user profile and account information after successful aut
 ### 2. URL Param Validation
 
 - Email must match regex pattern: `^[^\s@]+@[^\s@]+\.[^\s@]+$`
-- Invalid format hoặc thiếu param → hiện lỗi, không render verify UI
-- Email format hợp lệ → hiện UI (Supabase không gửi email cho địa chỉ chưa đăng ký — server-side protection)
-- **Không dùng sessionStorage gate** (cross-device limitation, xem `CLAUDE.md`)
+- Invalid format or missing param → display error, do not render verify UI
+- Valid email format → display UI (Supabase does not send emails to unregistered addresses — server-side protection)
+- **No sessionStorage gate is used** (cross-device limitation, see `CLAUDE.md`)
 
 ### 3. Supabase Keys
 
@@ -375,7 +371,7 @@ Protected page showing user profile and account information after successful aut
 
 - Require `email_confirmed_at` before sign-in
 - Redirect to verify-email after signup
-- Client-side: regex validation cho email param; server-side: Supabase không gửi email cho địa chỉ chưa đăng ký
+- Client-side: regex validation for the email param; server-side: Supabase does not send emails to unregistered addresses
 
 ### 5. Password Reset Security
 
@@ -392,7 +388,7 @@ Protected page showing user profile and account information after successful aut
 | S1 | Unauthenticated user accessing `/dashboard` | Middleware redirects to `/signin` | `middleware.ts` — PROTECTED_PATHS |
 | S2 | Authenticated user accessing `/signin`, `/signup`, `/forgot-password` | Middleware redirects to `/dashboard` | `middleware.ts` — GUEST_ONLY_PATHS |
 | S3 | Invalid/expired reset links showed password form | `PASSWORD_RECOVERY` event validation + 500ms timeout | `reset-password/page.tsx` |
-| S4 | Verify-email hiện UI dù email param sai format | Email regex validation; sessionStorage gate bị loại bỏ (cross-device limitation) — bảo vệ server-side qua Supabase | `verify-email/page.tsx` |
+| S4 | Verify-email displayed UI even when email param had invalid format | Email regex validation; sessionStorage gate removed (cross-device limitation) — server-side protection via Supabase | `verify-email/page.tsx` |
 | S5 | Signup allowed re-registration with duplicate email | Check `data.user.identities.length === 0` after `signUp()` | `signup/page.tsx` |
 | S6 | Middleware couldn't read session (localStorage-based client) | Switched to `createBrowserClient` (SSR-aware, cookie sync) | `lib/supabase/client.ts` |
 | S7 | Middleware using wrong server client | Switched to `createServerClient` with `cookies.getAll()/setAll()` | `middleware.ts` |
@@ -401,300 +397,298 @@ Protected page showing user profile and account information after successful aut
 
 ---
 
-## UI/UX Cases — Toàn bộ
+## UI/UX Cases — Complete
 
-> Liệt kê **tất cả** các case UI/UX liên quan đến hệ thống auth (5 trang + middleware).
-> Bao gồm: lỗi đã fix ✅, lỗi chưa gặp nhưng có nguy cơ ⚠️, case thông thường 🟢, và cải tiến UX 🔵
+> Lists **all** UI/UX cases related to the auth system (5 pages + middleware).
+> Includes: fixed bugs ✅, potential risks not yet observed ⚠️, normal cases 🟢, and UX improvements 🔵
 
-| Icon | Ý nghĩa |
+| Icon | Meaning |
 |------|---------|
-| ✅ **FIXED** | Lỗi đã xảy ra và đã được fix |
-| ⚠️ **RISK** | Chưa gặp nhưng có khả năng xảy ra |
-| 🟢 **NORMAL** | Happy path / case thông thường hoạt động đúng |
-| 🔵 **UX** | Vấn đề UX/design (không crash nhưng trải nghiệm kém) |
+| ✅ **FIXED** | Issue occurred and has been fixed |
+| ⚠️ **RISK** | Has not occurred but is possible |
+| 🟢 **NORMAL** | Happy path / common case working correctly |
+| 🔵 **UX** | UX/design issue (no crash but poor experience) |
 
 ---
 
 ### A. Sign Up (`/signup`)
 
 #### A.1 Happy Path
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| A.1.1 | Điền đầy đủ name, email, password hợp lệ → Submit | Redirect `/verify-email?email=...`, Supabase gửi email xác nhận | 🟢 NORMAL |
-| A.1.2 | Form loads lần đầu | Trắng, focus vào input Name | 🟢 NORMAL |
-| A.1.3 | Nhập vào input → xóa lỗi cũ | Error banner tự biến mất ngay khi user bắt đầu gõ | 🟢 NORMAL |
-| A.1.4 | Click "Sign Up" → đang xử lý | Button "Signing up..." và disabled | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| A.1.1 | Fill in valid email and password → Submit | Redirect `/verify-email?email=...`, Supabase sends confirmation email | 🟢 NORMAL |
+| A.1.2 | Form loads for the first time | Empty, focus on Email input | 🟢 NORMAL |
+| A.1.3 | Type in input → clear previous error | Error banner disappears as soon as user starts typing | 🟢 NORMAL |
+| A.1.4 | Click "Sign Up" → processing | Button shows "Signing up..." and is disabled | 🟢 NORMAL |
 | A.1.5 | Click "Already have an account? Sign in" | Redirect `/signin` | 🟢 NORMAL |
 
 #### A.2 Validation Errors
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| A.2.1 | Name < 2 ký tự | Hiện lỗi "Name must be at least 2 characters." | 🟢 NORMAL |
-| A.2.2 | Name chỉ có spaces (e.g. `"  "`) | Hiện lỗi name quá ngắn (trim() trước khi check) | 🟢 NORMAL |
-| A.2.3 | Email sai format (thiếu @, thiếu domain...) | Hiện lỗi "Invalid email format." | 🟢 NORMAL |
-| A.2.4 | Password < 6 ký tự | Hiện lỗi "Password must be at least 6 characters." | 🟢 NORMAL |
-| A.2.5 | Bỏ trống tất cả fields | Browser native validation ngăn submit (`required`) | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| A.2.1 | Email has invalid format (missing @, missing domain...) | Display error "Invalid email format." | 🟢 NORMAL |
+| A.2.2 | Password < 6 characters | Display error "Password must be at least 6 characters." | 🟢 NORMAL |
+| A.2.3 | Leave all fields empty | Browser native validation prevents submit (`required`) | 🟢 NORMAL |
 
 #### A.3 Duplicate Email
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| A.3.1 | ✅ Email đã đăng ký — Supabase trả **success giả** (`identities: []`) | Hiện banner đỏ "Email already registered. Please use a different email or **sign in**." với link `/signin` | ✅ FIXED |
-| A.3.2 | Email đã đăng ký nhưng **chưa verify** | Supabase vẫn trả `identities: []` → hiện banner duplicate (không phân biệt verified/unverified) | ⚠️ RISK |
-| A.3.3 | Nhập email khác sau khi thấy lỗi duplicate | `isDuplicateEmail` reset về `false`, banner biến mất | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| A.3.1 | ✅ Email already registered — Supabase returns **fake success** (`identities: []`) | Display red banner "Email already registered. Please use a different email or **sign in**." with link to `/signin` | ✅ FIXED |
+| A.3.2 | Email already registered but **not yet verified** | Supabase still returns `identities: []` → display duplicate banner (does not distinguish verified/unverified) | ⚠️ RISK |
+| A.3.3 | Enter a different email after seeing duplicate error | `isDuplicateEmail` resets to `false`, banner disappears | 🟢 NORMAL |
 
 #### A.4 Network / Server Errors
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| A.4.1 | Mất mạng khi submit | Supabase throw error → hiện message lỗi | 🟢 NORMAL |
-| A.4.2 | Supabase trả lỗi không xác định | Hiện `err.message` hoặc fallback "Sign up failed." | 🟢 NORMAL |
-| A.4.3 | Double-submit (click nhanh 2 lần) | Button disabled sau click đầu — motion.button cần verify disabled hoàn toàn | ⚠️ RISK |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| A.4.1 | Network loss while submitting | Supabase throws an error → display error message | 🟢 NORMAL |
+| A.4.2 | Supabase returns an unknown error | Display `err.message` or fallback "Sign up failed." | 🟢 NORMAL |
+| A.4.3 | Double-submit (rapid double-click) | Button disabled after first click — motion.button needs verification that it is fully disabled | ⚠️ RISK |
 
 #### A.5 UX
-| # | Case | Vấn đề | Trạng thái |
-|---|------|--------|------------|
-| A.5.1 | ✅ Password strength indicator | **Đã fix**: Custom `getPasswordStrength()` + 4-bar visual indicator dưới password input | ✅ FIXED |
-| A.5.2 | ✅ Show/hide password toggle | **Đã fix**: Toggle button "Show/Hide" ở góc phải input | ✅ FIXED |
-| A.5.3 | ✅ Sau signup thành công, back button về `/signup` | **Đã fix**: Đổi `router.push` → `router.replace` để remove khỏi history stack | ✅ FIXED |
+| # | Case | Issue | Status |
+|---|------|-------|--------|
+| A.5.1 | ✅ Password strength indicator | **Already fixed**: Custom `getPasswordStrength()` + 4-bar visual indicator below the password input | ✅ FIXED |
+| A.5.2 | ✅ Show/hide password toggle | **Already fixed**: "Show/Hide" toggle button on the right side of the input | ✅ FIXED |
+| A.5.3 | ✅ After successful signup, back button returns to `/signup` | **Already fixed**: Changed `router.push` → `router.replace` to remove from history stack | ✅ FIXED |
 
 ---
 
 ### B. Verify Email (`/verify-email`)
 
 #### B.1 Happy Path
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| B.1.1 | Vào trang sau signup thành công | Hiện "Loading..." → heading "Verify email" + message + 2 buttons | 🟢 NORMAL |
-| B.1.2 | Email format hợp lệ trong URL param | Hiện full UI verify (heading, message, Resend button, Back button) | 🟢 NORMAL |
-| B.1.3 | Click "Resend verification email" → thành công | Button "Sending..." → biến mất → banner xanh "Verification email resent. Please check your inbox." | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| B.1.1 | Open the page after successful signup | Display "Loading..." → heading "Verify email" + message + 2 buttons | 🟢 NORMAL |
+| B.1.2 | Valid email format in URL param | Display full verify UI (heading, message, Resend button, Back button) | 🟢 NORMAL |
+| B.1.3 | Click "Resend verification email" → success | Button shows "Sending..." → disappears → green banner "Verification email resent. Please check your inbox." | 🟢 NORMAL |
 | B.1.4 | Click "Back to Sign in" | Redirect `/signin` | 🟢 NORMAL |
-| B.1.5 | User đã verify (có session) → vào trang này | "Loading..." → redirect `/dashboard` ngay | 🟢 NORMAL |
+| B.1.5 | User is already verified (has session) → opens this page | "Loading..." → immediately redirect `/dashboard` | 🟢 NORMAL |
 
 #### B.2 Session Handling (Logic Critical)
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| B.2.1 | ✅ Race condition: email validation chạy trước session check | **Đã fix**: session check (Step 1) xong mới validate email (Step 2, gated `isCheckingSession`) | ✅ FIXED |
-| B.2.2 | ✅ Flash state: trang hiện UI brief trước khi redirect nếu có session | **Đã fix**: `isCheckingSession=true` → render "Loading..." | ✅ FIXED |
-| B.2.3 | ✅ Session check bị timeout / Supabase chậm | **Đã fix**: Thêm 5s `setTimeout` fallback — sau 5s vẫn chưa có response thì set `isCheckingSession=false` | ✅ FIXED |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| B.2.1 | ✅ Race condition: email validation runs before session check | **Already fixed**: session check (Step 1) finishes first, then email validation (Step 2, gated by `isCheckingSession`) | ✅ FIXED |
+| B.2.2 | ✅ Flash state: page shows UI briefly before redirect when a session exists | **Already fixed**: `isCheckingSession=true` → render "Loading..." | ✅ FIXED |
+| B.2.3 | ✅ Session check times out / Supabase is slow | **Already fixed**: Added 5s `setTimeout` fallback — after 5s with no response, set `isCheckingSession=false` | ✅ FIXED |
 
 #### B.3 Email Param Validation
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| B.3.1 | ✅ Vào `/verify-email` không có `?email=` param | Hiện lỗi "Email does not exist..." + Back button, KHÔNG hiện verify UI | ✅ FIXED |
-| B.3.2 | ✅ Vào `/verify-email?email=invalid-format` | Hiện lỗi "Email does not exist..." (regex validation) | ✅ FIXED |
-| B.3.3 | Email format hợp lệ (kể cả email chưa đăng ký) | Hiện verify UI — Supabase không gửi email cho địa chỉ chưa đăng ký (server-side) | 🟢 NORMAL |
-| B.3.4 | Mở link verify trên tab/thiết bị khác (email client mở tab mới, điện thoại...) | Hoạt động bình thường — không dùng sessionStorage gate nữa | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| B.3.1 | ✅ Open `/verify-email` without `?email=` param | Display error "Email does not exist..." + Back button, do NOT show verify UI | ✅ FIXED |
+| B.3.2 | ✅ Open `/verify-email?email=invalid-format` | Display error "Email does not exist..." (regex validation) | ✅ FIXED |
+| B.3.3 | Valid email format (even if not registered) | Display verify UI — Supabase does not send emails to unregistered addresses (server-side) | 🟢 NORMAL |
+| B.3.4 | Open the verify link in a different tab/device (email client opens new tab, phone...) | Works normally — no longer using sessionStorage gate | 🟢 NORMAL |
 
-> 💡 **Thiết kế có chủ đích**: `/verify-email` không dùng sessionStorage gate vì sessionStorage không share giữa tabs/thiết bị — user signup trên máy tính, mở link resend trên điện thoại sẽ bị lỗi nhầm. Bảo vệ thực sự ở server-side (Supabase không gửi email cho địa chỉ chưa đăng ký). Quyết định ghi trong `CLAUDE.md`.
+> 💡 **Intentional design**: `/verify-email` does not use a sessionStorage gate because sessionStorage is not shared across tabs/devices — a user signs up on their computer and opens the resend link on their phone, which would cause a false error. Real protection happens server-side (Supabase does not send emails to unregistered addresses). Decision recorded in `CLAUDE.md`.
 
 #### B.4 Resend Functionality
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| B.4.1 | ✅ Resend thành công → click Resend lần 2 | Button biến mất sau lần gửi đầu (`isSent=true`) → không thể spam | ✅ FIXED |
-| B.4.2 | ✅ Resend gặp lỗi (e.g. "Too many requests") | Hiện banner đỏ từ Supabase, button vẫn còn để thử lại | ✅ FIXED |
-| B.4.3 | ✅ Success message hiện màu đỏ (dùng `setError` cho success) | **Đã fix**: tách `successMessage` state riêng → banner xanh `text-green-700` | ✅ FIXED |
-| B.4.4 | Click Resend → đang loading | Button "Sending..." và disabled | 🟢 NORMAL |
-| B.4.5 | ✅ Resend thành công nhưng email rơi vào spam | **Đã fix**: Success message bổ sung "Please check your inbox and spam folder." | ✅ FIXED |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| B.4.1 | ✅ Resend succeeds → click Resend a second time | Button disappears after the first send (`isSent=true`) → cannot be spammed | ✅ FIXED |
+| B.4.2 | ✅ Resend encounters an error (e.g. "Too many requests") | Display red banner from Supabase, button remains visible to retry | ✅ FIXED |
+| B.4.3 | ✅ Success message displayed in red (using `setError` for success) | **Already fixed**: separated into a dedicated `successMessage` state → green banner `text-green-700` | ✅ FIXED |
+| B.4.4 | Click Resend → loading | Button shows "Sending..." and is disabled | 🟢 NORMAL |
+| B.4.5 | ✅ Resend succeeds but email lands in spam | **Already fixed**: success message updated with "Please check your inbox and spam folder." | ✅ FIXED |
 
 #### B.5 Link Verification Flow
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| B.5.1 | Click link verify trong email | Supabase redirect → user có session → trang detect session → redirect `/dashboard` | 🟢 NORMAL |
-| B.5.2 | Link verify đã hết hạn (mặc định Supabase: 10 phút) | Supabase báo lỗi → user vẫn ở trang verify-email, có thể resend | ⚠️ RISK (UI không handle explicitly) |
-| B.5.3 | Click link verify 2 lần (link đã dùng) | Supabase tự động re-check token, redirect dashboard nếu session còn — UI handle đúng | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| B.5.1 | Click the verify link in the email | Supabase redirects → user has session → page detects session → redirects to `/dashboard` | 🟢 NORMAL |
+| B.5.2 | Verify link has expired (Supabase default: 10 minutes) | Supabase reports an error → user remains on the verify-email page and can resend | ⚠️ RISK (UI does not handle explicitly) |
+| B.5.3 | Click verify link twice (link already used) | Supabase automatically re-checks the token and redirects to dashboard if the session is still valid — UI handles correctly | 🟢 NORMAL |
 
 ---
 
 ### C. Sign In (`/signin`)
 
 #### C.1 Happy Path
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| C.1.1 | Email + password đúng, email đã verify | Redirect `/dashboard` | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| C.1.1 | Correct email + password, email already verified | Redirect `/dashboard` | 🟢 NORMAL |
 | C.1.2 | Click "Forgot password?" | Redirect `/forgot-password` | 🟢 NORMAL |
 | C.1.3 | Click "Sign up" | Redirect `/signup` | 🟢 NORMAL |
-| C.1.4 | Đang submit | Button "Signing in..." và disabled | 🟢 NORMAL |
-| C.1.5 | Gõ vào input → error banner tự xóa | Error biến mất khi user chỉnh sửa | 🟢 NORMAL |
+| C.1.4 | While submitting | Button shows "Signing in..." and is disabled | 🟢 NORMAL |
+| C.1.5 | Type into input → error banner clears | Error disappears when user edits the input | 🟢 NORMAL |
 
 #### C.2 Credential Errors
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| C.2.1 | Password sai | Hiện "Invalid email or password." (Supabase message được normalize) | 🟢 NORMAL |
-| C.2.2 | Email không tồn tại | Hiện "Invalid email or password." (cùng message — không reveal account existence) | 🟢 NORMAL |
-| C.2.3 | Email chưa verify | Hiện "Please verify your email before signing in." (`email_confirmed_at` null check) | 🟢 NORMAL |
-| C.2.4 | Email sai format | Hiện "Invalid email format." (client-side, không gọi API) | 🟢 NORMAL |
-| C.2.5 | Password < 6 ký tự | Hiện "Password must be at least 6 characters." (client-side) | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| C.2.1 | Wrong password | Display "Invalid email or password." (Supabase message normalized) | 🟢 NORMAL |
+| C.2.2 | Email does not exist | Display "Invalid email or password." (same message — does not reveal account existence) | 🟢 NORMAL |
+| C.2.3 | Email not yet verified | Display "Please verify your email before signing in." (`email_confirmed_at` null check) | 🟢 NORMAL |
+| C.2.4 | Email has invalid format | Display "Invalid email format." (client-side, no API call) | 🟢 NORMAL |
+| C.2.5 | Password < 6 characters | Display "Password must be at least 6 characters." (client-side) | 🟢 NORMAL |
 
 #### C.3 Session / Middleware
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| C.3.1 | ✅ Đã đăng nhập → truy cập `/signin` | Middleware redirect về `/dashboard` | ✅ FIXED |
-| C.3.2 | Chưa đăng nhập → truy cập `/dashboard` | Middleware redirect về `/signin` | 🟢 NORMAL |
-| C.3.3 | Signin thành công nhưng `router.push("/dashboard")` lag | User thấy flash màn hình signin rồi mới chuyển | ⚠️ RISK |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| C.3.1 | ✅ Already signed in → access `/signin` | Middleware redirects to `/dashboard` | ✅ FIXED |
+| C.3.2 | Not signed in → access `/dashboard` | Middleware redirects to `/signin` | 🟢 NORMAL |
+| C.3.3 | Sign-in succeeds but `router.push("/dashboard")` lags | User briefly sees the signin screen flash before navigating | ⚠️ RISK |
 
 #### C.4 UX
-| # | Case | Vấn đề | Trạng thái |
-|---|------|--------|------------|
-| C.4.1 | ✅ Remember me checkbox | **Đã fix**: Checkbox + cookie `remember-me`. Khi unchecked, cookie handler (proxy + browser client) strip `maxAge`/`expires` của Supabase auth cookies → session cookies (đăng xuất khi đóng browser) | ✅ FIXED |
-| C.4.2 | ✅ Show/hide password toggle | **Đã fix**: Toggle button "Show/Hide" ở góc phải input | ✅ FIXED |
-| C.4.3 | ✅ Rate limit message từ Supabase | **Đã fix**: Normalize message — nếu chứa "rate"/"too many"/"limit" → "Too many attempts. Please wait a moment before trying again." | ✅ FIXED |
+| # | Case | Issue | Status |
+|---|------|-------|--------|
+| C.4.1 | ✅ Remember me checkbox | **Already fixed**: Checkbox + cookie `remember-me`. When unchecked, cookie handler (proxy + browser client) strips `maxAge`/`expires` from Supabase auth cookies → session cookies (sign out when browser closes) | ✅ FIXED |
+| C.4.2 | ✅ Show/hide password toggle | **Already fixed**: "Show/Hide" toggle button on the right side of the input | ✅ FIXED |
+| C.4.3 | ✅ Rate limit message from Supabase | **Already fixed**: Normalize message — if it contains "rate"/"too many"/"limit" → "Too many attempts. Please wait a moment before trying again." | ✅ FIXED |
 
 ---
 
 ### D. Forgot Password (`/forgot-password`)
 
 #### D.1 Happy Path
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| D.1.1 | Email hợp lệ + tồn tại → Submit | Banner xanh "Password reset email sent!" + link "Back to Sign in" | 🟢 NORMAL |
-| D.1.2 | Email hợp lệ nhưng **không tồn tại** → Submit | Vẫn hiện success (security best practice — không reveal account existence) | 🟢 NORMAL |
-| D.1.3 | Đang submit | Button "Sending..." và disabled | 🟢 NORMAL |
-| D.1.4 | Click "Back to Sign in" (link dưới form) | Redirect `/signin` | 🟢 NORMAL |
-| D.1.5 | Sau success → click "Back to Sign in" | Redirect `/signin` | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| D.1.1 | Valid email + exists → Submit | Green banner "Password reset email sent!" + "Back to Sign in" link | 🟢 NORMAL |
+| D.1.2 | Valid email but **does not exist** → Submit | Still shows success (security best practice — does not reveal account existence) | 🟢 NORMAL |
+| D.1.3 | While submitting | Button shows "Sending..." and is disabled | 🟢 NORMAL |
+| D.1.4 | Click "Back to Sign in" (link below the form) | Redirect `/signin` | 🟢 NORMAL |
+| D.1.5 | After success → click "Back to Sign in" | Redirect `/signin` | 🟢 NORMAL |
 
 #### D.2 Validation
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| D.2.1 | Email sai format | Hiện "Invalid email format." (client-side, không gọi API) | 🟢 NORMAL |
-| D.2.2 | Email trống | Browser native validation ngăn submit | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| D.2.1 | Email has invalid format | Display "Invalid email format." (client-side, no API call) | 🟢 NORMAL |
+| D.2.2 | Empty email | Browser native validation prevents submit | 🟢 NORMAL |
 
 #### D.3 Session / Middleware
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| D.3.1 | ✅ Đã đăng nhập → truy cập `/forgot-password` | Middleware redirect về `/dashboard` | ✅ FIXED |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| D.3.1 | ✅ Already signed in → access `/forgot-password` | Middleware redirects to `/dashboard` | ✅ FIXED |
 
 #### D.4 UX / Behavior
-| # | Case | Vấn đề | Trạng thái |
-|---|------|--------|------------|
-| D.4.1 | Submit nhiều lần cùng 1 email | Supabase đã trả error message khi rate limit, UI surface message này lên (intentional design — luôn show success ở trạng thái success thật, error chỉ hiện khi Supabase trả error trước khi reach success state) | 🟢 NORMAL |
-| D.4.2 | ✅ Email có thể bị delay / rơi vào spam | **Đã fix**: Success message bổ sung "Please check your inbox and spam folder." | ✅ FIXED |
-| D.4.3 | Sau success, user back button về form | Form hiện trở lại, có thể submit lại | ⚠️ RISK |
-| D.4.4 | `resetPasswordForEmail` lỗi nhưng UI vẫn hiện success | Lỗi bị `console.error` silent — intentional (security), nhưng user không biết thực ra thất bại | ⚠️ RISK |
+| # | Case | Issue | Status |
+|---|------|-------|--------|
+| D.4.1 | Submit the same email multiple times | Supabase already returns an error message on rate limit, the UI surfaces this message (intentional design — always show success when truly successful, error only displayed when Supabase returns an error before reaching the success state) | 🟢 NORMAL |
+| D.4.2 | ✅ Email may be delayed / land in spam | **Already fixed**: success message updated with "Please check your inbox and spam folder." | ✅ FIXED |
+| D.4.3 | After success, user presses back to return to the form | The form reappears and can be submitted again | ⚠️ RISK |
+| D.4.4 | `resetPasswordForEmail` errors but UI still shows success | Error is silently `console.error` — intentional (security), but the user does not know it actually failed | ⚠️ RISK |
 
 ---
 
 ### E. Reset Password (`/reset-password`)
 
 #### E.1 Happy Path
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| E.1.1 | Click link hợp lệ từ email → vào trang | "Verifying reset link..." → `PASSWORD_RECOVERY` event fire → hiện form | 🟢 NORMAL |
-| E.1.2 | Nhập password mới hợp lệ + confirm khớp → Submit | `updateUser()` thành công → trang success "Password Updated" + "Go to Sign In" | 🟢 NORMAL |
-| E.1.3 | Đang submit | Button "Resetting..." và disabled | 🟢 NORMAL |
-| E.1.4 | Reset thành công → click "Go to Sign In" | Redirect `/signin` | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| E.1.1 | Click a valid link from the email → open the page | "Verifying reset link..." → `PASSWORD_RECOVERY` event fires → form is displayed | 🟢 NORMAL |
+| E.1.2 | Enter a valid new password + matching confirm → Submit | `updateUser()` succeeds → success page "Password Updated" + "Go to Sign In" | 🟢 NORMAL |
+| E.1.3 | While submitting | Button shows "Resetting..." and is disabled | 🟢 NORMAL |
+| E.1.4 | Reset succeeds → click "Go to Sign In" | Redirect `/signin` | 🟢 NORMAL |
 | E.1.5 | Click "Request a new reset link" | Redirect `/forgot-password` | 🟢 NORMAL |
 
 #### E.2 Token / Session Validation
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| E.2.1 | ✅ Vào `/reset-password` trực tiếp (không qua email link) | `PASSWORD_RECOVERY` không fire → 500ms timeout → banner vàng "Invalid or expired reset link" | ✅ FIXED |
-| E.2.2 | ✅ Trước đây dùng `?token=` query param (sai cơ chế Supabase) | **Đã fix**: Chuyển sang `onAuthStateChange("PASSWORD_RECOVERY")` | ✅ FIXED |
-| E.2.3 | ✅ Không validate token → hiện form cho tất cả mọi người | **Đã fix**: Gated bởi `isValidSession` từ `PASSWORD_RECOVERY` event | ✅ FIXED |
-| E.2.4 | Link reset đã hết hạn (>1h) | `PASSWORD_RECOVERY` không fire → 500ms → hiện "Invalid or expired" | 🟢 NORMAL |
-| E.2.5 | Link reset đã dùng rồi | Supabase invalidate token → `PASSWORD_RECOVERY` không fire → hiện invalid | 🟢 NORMAL |
-| E.2.6 | ✅ 500ms timeout quá ngắn trên mạng chậm | **Đã fix**: Tăng timeout lên 2000ms để đủ thời gian cho `PASSWORD_RECOVERY` event fire | ✅ FIXED |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| E.2.1 | ✅ Open `/reset-password` directly (not via email link) | `PASSWORD_RECOVERY` does not fire → 500ms timeout → yellow banner "Invalid or expired reset link" | ✅ FIXED |
+| E.2.2 | ✅ Previously used `?token=` query param (wrong Supabase mechanism) | **Already fixed**: switched to `onAuthStateChange("PASSWORD_RECOVERY")` | ✅ FIXED |
+| E.2.3 | ✅ No token validation → form displayed for everyone | **Already fixed**: gated by `isValidSession` from the `PASSWORD_RECOVERY` event | ✅ FIXED |
+| E.2.4 | Reset link has expired (>1h) | `PASSWORD_RECOVERY` does not fire → 500ms → display "Invalid or expired" | 🟢 NORMAL |
+| E.2.5 | Reset link already used | Supabase invalidates the token → `PASSWORD_RECOVERY` does not fire → display invalid | 🟢 NORMAL |
+| E.2.6 | ✅ 500ms timeout too short on slow networks | **Already fixed**: increased timeout to 2000ms to allow enough time for the `PASSWORD_RECOVERY` event to fire | ✅ FIXED |
 
 #### E.3 Form Validation
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| E.3.1 | Bỏ trống cả 2 fields | Hiện "Please fill in all fields." | 🟢 NORMAL |
-| E.3.2 | Password và Confirm không khớp | Hiện "Passwords do not match." | 🟢 NORMAL |
-| E.3.3 | Password < 6 ký tự | Hiện "Password must be at least 6 characters." | 🟢 NORMAL |
-| E.3.4 | Supabase `updateUser` trả lỗi | Hiện `err.message` hoặc "Failed to reset password." | 🟢 NORMAL |
-| E.3.5 | Gõ vào input → error cũ tự xóa | Error biến mất khi chỉnh sửa | 🟢 NORMAL |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| E.3.1 | Leave both fields empty | Display "Please fill in all fields." | 🟢 NORMAL |
+| E.3.2 | Password and Confirm do not match | Display "Passwords do not match." | 🟢 NORMAL |
+| E.3.3 | Password < 6 characters | Display "Password must be at least 6 characters." | 🟢 NORMAL |
+| E.3.4 | Supabase `updateUser` returns an error | Display `err.message` or "Failed to reset password." | 🟢 NORMAL |
+| E.3.5 | Type into input → previous error clears | Error disappears when user edits the input | 🟢 NORMAL |
 
 #### E.4 Session / Middleware
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| E.4.1 | Đã đăng nhập thường → vào `/reset-password` | Middleware không block (không trong GUEST_ONLY_PATHS) → vào được trang, thấy "Invalid or expired" vì không có `PASSWORD_RECOVERY` event | ⚠️ RISK |
-| E.4.2 | Sau reset thành công, session Supabase vẫn còn | User có thể vào `/dashboard` ngay mà không cần signin lại | ⚠️ RISK |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| E.4.1 | Already signed in normally → open `/reset-password` | Middleware does not block (not in GUEST_ONLY_PATHS) → page loads, displays "Invalid or expired" because no `PASSWORD_RECOVERY` event occurs | ⚠️ RISK |
+| E.4.2 | After successful reset, the Supabase session still exists | User can access `/dashboard` immediately without signing in again | ⚠️ RISK |
 
 #### E.5 UX
-| # | Case | Vấn đề | Trạng thái |
-|---|------|--------|------------|
-| E.5.1 | ✅ Show/hide password toggle | **Đã fix**: 2 toggles (cho New password + Confirm password) | ✅ FIXED |
-| E.5.2 | Supabase email template còn debug variables | Email có thể hiện raw `{{ .Token }}`, `{{ .TokenHash }}` nếu template chưa clean trong Supabase Dashboard | ⚠️ RISK |
+| # | Case | Issue | Status |
+|---|------|-------|--------|
+| E.5.1 | ✅ Show/hide password toggle | **Already fixed**: 2 toggles (for New password + Confirm password) | ✅ FIXED |
+| E.5.2 | Supabase email template still has debug variables | Email may display raw `{{ .Token }}`, `{{ .TokenHash }}` if the template has not been cleaned in the Supabase Dashboard | ⚠️ RISK |
 
 ---
 
-### F. Middleware & Session Global
+### F. Middleware & Global Session
 
 #### F.1 Route Protection
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
 | F.1.1 | ✅ Authenticated user → `/signin` | Redirect `/dashboard` | ✅ FIXED |
 | F.1.2 | ✅ Authenticated user → `/signup` | Redirect `/dashboard` | ✅ FIXED |
 | F.1.3 | ✅ Authenticated user → `/forgot-password` | Redirect `/dashboard` | ✅ FIXED |
 | F.1.4 | Unauthenticated user → `/dashboard` | Redirect `/signin` | 🟢 NORMAL |
-| F.1.5 | Authenticated user → `/verify-email` | Không block ở middleware, page tự redirect nếu có session | 🟢 NORMAL |
-| F.1.6 | Authenticated user → `/reset-password` | Không block (không trong GUEST_ONLY_PATHS) — xem E.4.1 | ⚠️ RISK |
+| F.1.5 | Authenticated user → `/verify-email` | Not blocked at the middleware; the page redirects itself if a session exists | 🟢 NORMAL |
+| F.1.6 | Authenticated user → `/reset-password` | Not blocked (not in GUEST_ONLY_PATHS) — see E.4.1 | ⚠️ RISK |
 
 #### F.2 Supabase Client
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| F.2.1 | ✅ `createClient` (localStorage) → middleware không đọc được session | **Đã fix**: Chuyển sang `createBrowserClient` → sync session vào cookie | ✅ FIXED |
-| F.2.2 | ✅ Middleware dùng sai client, không đọc được cookie | **Đã fix**: Middleware dùng `createServerClient` với `cookies.getAll()/setAll()` | ✅ FIXED |
-| F.2.3 | Cookie expire → session mất đột ngột | User bị redirect `/signin` (Supabase auto-refresh, nhưng edge cases vẫn xảy ra) | ⚠️ RISK |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| F.2.1 | ✅ `createClient` (localStorage) → middleware cannot read the session | **Already fixed**: switched to `createBrowserClient` → syncs the session into a cookie | ✅ FIXED |
+| F.2.2 | ✅ Middleware uses the wrong client and cannot read the cookie | **Already fixed**: middleware uses `createServerClient` with `cookies.getAll()/setAll()` | ✅ FIXED |
+| F.2.3 | Cookie expires → session disappears suddenly | User is redirected to `/signin` (Supabase auto-refreshes, but edge cases still occur) | ⚠️ RISK |
 
 #### F.3 Session Persistence
-| # | Case | Hành vi mong đợi | Trạng thái |
-|---|------|-----------------|------------|
-| F.3.1 | Signin thành công → refresh page | Vẫn logged in (cookie persist) | 🟢 NORMAL |
-| F.3.2 | Mở tab mới sau khi signin | Vẫn logged in (auth cookie shared across tabs) | 🟢 NORMAL |
-| F.3.3 | ✅ Đóng browser → mở lại | **Đã fix**: Remember me checkbox kiểm soát hành vi này. Khi checked (default) → session persist; khi unchecked → cookies trở thành session cookies, đóng browser = đăng xuất | ✅ FIXED |
+| # | Case | Expected Behavior | Status |
+|---|------|-------------------|--------|
+| F.3.1 | Sign-in succeeds → refresh page | Still logged in (cookie persists) | 🟢 NORMAL |
+| F.3.2 | Open a new tab after signing in | Still logged in (auth cookie shared across tabs) | 🟢 NORMAL |
+| F.3.3 | ✅ Close browser → reopen | **Already fixed**: Remember me checkbox controls this behavior. When checked (default) → session persists; when unchecked → cookies become session cookies, closing the browser logs the user out | ✅ FIXED |
 
 ---
 
 ### G. Cross-Cutting UX Issues
 
-| # | Case | Vấn đề | Trang bị ảnh hưởng | Trạng thái |
-|---|------|--------|--------------------|------------|
-| G.1 | Không có success animation sau action | Visual feedback chỉ là text, không có motion | Tất cả | 🔵 UX (skipped — out of scope) |
-| G.2 | Không có skeleton/placeholder khi loading | "Loading..." / "Verifying..." text thuần | verify-email, reset-password | 🔵 UX (skipped — out of scope) |
-| G.3 | ✅ Accessible error announcements | **Đã fix**: Tất cả error/success divs có `role="alert" aria-live="assertive"` (error) hoặc `role="status" aria-live="polite"` (success) | ✅ FIXED |
-| G.4 | ✅ `prefers-reduced-motion` support | **Đã fix**: Tất cả 5 auth pages dùng `useReducedMotion()` từ `motion/react` — skip animation nếu OS setting bật | ✅ FIXED |
-| G.5 | Enter key submit form | Có `noValidate` nhưng `<form onSubmit>` vẫn handle được | signin, signup | 🟢 NORMAL |
-| G.6 | Rapid re-submission | Button disabled trong loading → không gọi API nhiều lần | Tất cả | 🟢 NORMAL |
-| G.7 | iOS Safari auto-zoom input | Font 17px đủ ngưỡng tránh auto-zoom | Tất cả | 🟢 NORMAL |
+| # | Case | Issue | Pages Affected | Status |
+|---|------|-------|----------------|--------|
+| G.1 | No success animation after action | Visual feedback is text only, no motion | All | 🔵 UX (skipped — out of scope) |
+| G.2 | No skeleton/placeholder during loading | Plain "Loading..." / "Verifying..." text | verify-email, reset-password | 🔵 UX (skipped — out of scope) |
+| G.3 | ✅ Accessible error announcements | **Already fixed**: All error/success divs have `role="alert" aria-live="assertive"` (error) or `role="status" aria-live="polite"` (success) | ✅ FIXED |
+| G.4 | ✅ `prefers-reduced-motion` support | **Already fixed**: All 5 auth pages use `useReducedMotion()` from `motion/react` — skip animation if the OS setting is enabled | ✅ FIXED |
+| G.5 | Enter key submits form | Has `noValidate` but `<form onSubmit>` still handles it | signin, signup | 🟢 NORMAL |
+| G.6 | Rapid re-submission | Button is disabled during loading → API not called multiple times | All | 🟢 NORMAL |
+| G.7 | iOS Safari auto-zoom input | 17px font is above the threshold to avoid auto-zoom | All | 🟢 NORMAL |
 
 ---
 
-## Tóm tắt số liệu
+## Summary Statistics
 
-| Loại | Số lượng |
-|------|---------|
-| ✅ Bugs/cases đã được fix | **27** (14 ban đầu + 13 từ Risk/UX plan rounds 1+2) |
-| ⚠️ Risks còn tồn (skipped với lý do hợp lệ) | **6** |
-| 🟢 Cases thông thường hoạt động đúng | **35** |
-| 🔵 UX improvements để tham khảo (G.1, G.2) | **2** |
-| **Tổng** | **70** |
+| Type | Count |
+|------|-------|
+| ✅ Bugs/cases fixed | **27** (14 initial + 13 from Risk/UX plan rounds 1+2) |
+| ⚠️ Risks remaining (skipped with valid reasons) | **6** |
+| 🟢 Normal cases working correctly | **35** |
+| 🔵 UX improvements for reference (G.1, G.2) | **2** |
+| **Total** | **70** |
 
 ---
 
-## Bugs Đã Fix — Quick Reference
+## Bugs Fixed — Quick Reference
 
-| # | Vấn đề | Giải pháp | File |
-|---|--------|-----------|------|
-| B1 | Signup không detect email đã đăng ký (Supabase trả success giả) | Check `data.user.identities.length === 0` | `signup/page.tsx` |
-| B2 | Verify-email hiện UI dù email param sai format | Regex validation gated sau session check; không dùng sessionStorage | `verify-email/page.tsx` |
-| B3 | Flash content trước khi redirect nếu có session | `isCheckingSession=true` → render "Loading..." trong khi check session | `verify-email/page.tsx` |
-| B4 | Race condition: email validate chạy trước session check | Step 1 (session check) → Step 2 (email regex) với `isCheckingSession` gate | `verify-email/page.tsx` |
-| B5 | Resend success dùng `setError` → message màu đỏ thay vì xanh | Tách `successMessage` state riêng, banner `text-green-700` | `verify-email/page.tsx` |
-| B6 | Resend không có spam protection (có thể gửi nhiều lần) | `isSent=true` sau lần gửi đầu → ẩn button | `verify-email/page.tsx` |
-| B7 | Reset-password dùng `?token=` query param (sai cơ chế Supabase) | Chuyển sang `onAuthStateChange("PASSWORD_RECOVERY")` | `reset-password/page.tsx` |
-| B8 | Reset-password hiện form cho tất cả mọi người (không validate token) | Gated bởi `isValidSession` từ PASSWORD_RECOVERY event | `reset-password/page.tsx` |
-| B9 | Authenticated user vào được `/signin`, `/signup`, `/forgot-password` | Middleware thêm `GUEST_ONLY_PATHS` redirect → `/dashboard` | `middleware.ts` |
-| B10 | Middleware không đọc được session (`createClient` dùng localStorage) | Đổi sang `createBrowserClient` (SSR-aware, sync cookie) | `lib/supabase/client.ts` |
-| B11 | Middleware dùng sai server client | Chuyển sang `createServerClient` với `cookies.getAll()/setAll()` | `middleware.ts` |
-| B12 | Back button sau signup → form trống xuất hiện lại | Đổi `router.push` → `router.replace` | `signup/page.tsx` |
-| B13 | `getSession()` infinite loading khi Supabase chậm | 5s timeout fallback → set `isCheckingSession=false` | `verify-email/page.tsx` |
-| B14 | Resend / forgot-password email rơi vào spam, UI không nhắc | Bổ sung "Please check your inbox and spam folder." | `verify-email/page.tsx`, `forgot-password/page.tsx` |
-| B15 | Reset-password 500ms timeout quá ngắn → false negative trên mạng chậm | Tăng lên 2000ms | `reset-password/page.tsx` |
-| B16 | Rate limit từ Supabase hiện message generic | Normalize → "Too many attempts. Please wait a moment before trying again." | `signin/page.tsx` |
-| B17 | Password inputs không có show/hide toggle | Thêm `showPassword` state + button toggle ở 4 inputs (signup, signin, reset-password ×2) | `signup/page.tsx`, `signin/page.tsx`, `reset-password/page.tsx` |
-| B18 | Screen reader không announce error/success | Thêm `role="alert" aria-live="assertive"` (error), `role="status" aria-live="polite"` (success) | tất cả 5 auth pages |
-| B19 | Framer Motion không respect OS `prefers-reduced-motion` | Dùng `useReducedMotion()` → skip animation nếu OS setting bật | tất cả 5 auth pages |
-| B20 | Signup không có password strength indicator | Custom `getPasswordStrength()` (length/upper-lower/digit/special) + 4-bar visual indicator | `signup/page.tsx` |
-| B21 | Signin không có Remember me — session persistence không kiểm soát được | Checkbox `rememberMe` + cookie `remember-me`. Cookie handler (proxy + browser client) strip `maxAge`/`expires` khi `rememberMe=false` → auth cookies trở thành session cookies | `signin/page.tsx`, `proxy.ts`, `lib/supabase/client.ts` |
+| # | Issue | Solution | File |
+|---|-------|----------|------|
+| B1 | Signup did not detect already-registered emails (Supabase returns fake success) | Check `data.user.identities.length === 0` | `signup/page.tsx` |
+| B2 | Verify-email displayed UI even when email param had invalid format | Regex validation gated after session check; sessionStorage no longer used | `verify-email/page.tsx` |
+| B3 | Flash content before redirect when a session exists | `isCheckingSession=true` → render "Loading..." while checking session | `verify-email/page.tsx` |
+| B4 | Race condition: email validate ran before session check | Step 1 (session check) → Step 2 (email regex) with `isCheckingSession` gate | `verify-email/page.tsx` |
+| B5 | Resend success used `setError` → message displayed in red instead of green | Separated dedicated `successMessage` state, banner `text-green-700` | `verify-email/page.tsx` |
+| B6 | Resend had no spam protection (could be sent multiple times) | `isSent=true` after the first send → hide button | `verify-email/page.tsx` |
+| B7 | Reset-password used `?token=` query param (wrong Supabase mechanism) | Switched to `onAuthStateChange("PASSWORD_RECOVERY")` | `reset-password/page.tsx` |
+| B8 | Reset-password displayed form for everyone (no token validation) | Gated by `isValidSession` from PASSWORD_RECOVERY event | `reset-password/page.tsx` |
+| B9 | Authenticated users could access `/signin`, `/signup`, `/forgot-password` | Middleware added `GUEST_ONLY_PATHS` redirect → `/dashboard` | `middleware.ts` |
+| B10 | Middleware could not read session (`createClient` used localStorage) | Switched to `createBrowserClient` (SSR-aware, cookie sync) | `lib/supabase/client.ts` |
+| B11 | Middleware used the wrong server client | Switched to `createServerClient` with `cookies.getAll()/setAll()` | `middleware.ts` |
+| B12 | Back button after signup → empty form reappeared | Switched `router.push` → `router.replace` | `signup/page.tsx` |
+| B13 | `getSession()` infinite loading when Supabase was slow | 5s timeout fallback → set `isCheckingSession=false` | `verify-email/page.tsx` |
+| B14 | Resend / forgot-password emails landing in spam, UI did not mention | Added "Please check your inbox and spam folder." | `verify-email/page.tsx`, `forgot-password/page.tsx` |
+| B15 | Reset-password 500ms timeout too short → false negative on slow networks | Increased to 2000ms | `reset-password/page.tsx` |
+| B16 | Rate limit from Supabase displayed a generic message | Normalize → "Too many attempts. Please wait a moment before trying again." | `signin/page.tsx` |
+| B17 | Password inputs had no show/hide toggle | Added `showPassword` state + toggle button on 4 inputs (signup, signin, reset-password ×2) | `signup/page.tsx`, `signin/page.tsx`, `reset-password/page.tsx` |
+| B18 | Screen readers did not announce error/success | Added `role="alert" aria-live="assertive"` (error), `role="status" aria-live="polite"` (success) | all 5 auth pages |
+| B19 | Framer Motion did not respect OS `prefers-reduced-motion` | Used `useReducedMotion()` → skip animation if OS setting is enabled | all 5 auth pages |
+| B20 | Signup had no password strength indicator | Custom `getPasswordStrength()` (length/upper-lower/digit/special) + 4-bar visual indicator | `signup/page.tsx` |
+| B21 | Signin had no Remember me — session persistence not controllable | Checkbox `rememberMe` + cookie `remember-me`. Cookie handler (proxy + browser client) strips `maxAge`/`expires` when `rememberMe=false` → auth cookies become session cookies | `signin/page.tsx`, `proxy.ts`, `lib/supabase/client.ts` |
 
 ---
 
@@ -757,91 +751,90 @@ Protected page showing user profile and account information after successful aut
 
 ### A. Sign Up Flow
 
-- [ ] Mở `/signup`, UI đúng layout (title, inputs, button, link signin)
-- [ ] Submit rỗng → native browser validation
-- [ ] Name < 2 ký tự → báo lỗi đúng
-- [ ] Email sai format → báo lỗi đúng
-- [ ] Password < 6 ký tự → báo lỗi đúng
-- [ ] Email đã tồn tại → hiện lỗi duplicate + link qua `/signin`
-- [ ] Email mới hợp lệ → redirect `/verify-email?email=...`
+- [ ] Open `/signup`, UI matches the layout (title, inputs, button, signin link)
+- [ ] Submit empty → native browser validation
+- [ ] Email has invalid format → correct error displayed
+- [ ] Password < 6 characters → correct error displayed
+- [ ] Email already exists → display duplicate error + link to `/signin`
+- [ ] New valid email → redirect `/verify-email?email=...`
 
 ### B. Verify Email Flow
 
-- [ ] Vào `/verify-email` thiếu query email → báo lỗi, không hiện verify UI
-- [ ] Query email sai format → báo lỗi
-- [ ] Query email format hợp lệ (kể cả chưa đăng ký) → hiện verify UI
-- [ ] Mở trang trên thiết bị/tab khác với email hợp lệ → hoạt động bình thường (không bị sessionStorage block)
-- [ ] Logged-in user vào `/verify-email` → redirect `/dashboard`
-- [ ] Click resend email → loading → success message xanh
-- [ ] Resend thành công → ẩn nút resend (`isSent=true`)
-- [ ] Resend thất bại → hiện error đỏ, nút vẫn còn
+- [ ] Open `/verify-email` without email query → display error, do not show verify UI
+- [ ] Email query has invalid format → display error
+- [ ] Email query has valid format (even if not registered) → display verify UI
+- [ ] Open the page on a different device/tab with valid email → works normally (not blocked by sessionStorage)
+- [ ] Logged-in user opens `/verify-email` → redirect `/dashboard`
+- [ ] Click resend email → loading → green success message
+- [ ] Resend succeeds → resend button hidden (`isSent=true`)
+- [ ] Resend fails → display red error, button remains visible
 
 ### C. Sign In Flow
 
-- [ ] Mở `/signin`, UI đầy đủ (email/password/forgot/signup links)
-- [ ] Email sai format → báo lỗi
-- [ ] Password < 6 → báo lỗi
-- [ ] Sai credentials → "Invalid email or password."
-- [ ] Account chưa verify email → báo lỗi verify
-- [ ] Login đúng + đã verify → redirect `/dashboard`
-- [ ] Trong lúc submit: button disabled + "Signing in..."
+- [ ] Open `/signin`, UI complete (email/password/forgot/signup links)
+- [ ] Email has invalid format → display error
+- [ ] Password < 6 → display error
+- [ ] Wrong credentials → "Invalid email or password."
+- [ ] Account email not yet verified → display verify error
+- [ ] Correct login + verified → redirect `/dashboard`
+- [ ] While submitting: button disabled + "Signing in..."
 
 ### D. Forgot Password Flow
 
-- [ ] Mở `/forgot-password`, UI đúng
-- [ ] Email sai format → báo lỗi
-- [ ] Submit email hợp lệ → success state + link back signin
-- [ ] Trong lúc submit: button disabled + "Sending..."
-- [ ] Dù email không tồn tại vẫn hiện success (chống email enumeration)
+- [ ] Open `/forgot-password`, UI is correct
+- [ ] Email has invalid format → display error
+- [ ] Submit valid email → success state + back-to-signin link
+- [ ] While submitting: button disabled + "Sending..."
+- [ ] Even if email does not exist, success is still shown (anti-enumeration)
 
 ### E. Reset Password Flow
 
-- [ ] Mở link reset hợp lệ từ email → "Verifying reset link..." → form
-- [ ] Vào `/reset-password` trực tiếp → "Verifying..." → "Invalid or expired reset link"
-- [ ] Password/confirm rỗng → "Please fill in all fields."
+- [ ] Open valid reset link from email → "Verifying reset link..." → form
+- [ ] Open `/reset-password` directly → "Verifying..." → "Invalid or expired reset link"
+- [ ] Empty password/confirm → "Please fill in all fields."
 - [ ] Password != confirm → "Passwords do not match."
 - [ ] Password < 6 → "Password must be at least 6 characters."
-- [ ] Reset thành công → màn success + "Go to Sign In"
+- [ ] Reset succeeds → success screen + "Go to Sign In"
 
 ### F. Route Guard & Session
 
-- [ ] Chưa login vào `/dashboard` → redirect `/signin`
-- [ ] Đã login vào `/signin` → redirect `/dashboard`
-- [ ] Đã login vào `/signup` → redirect `/dashboard`
-- [ ] Đã login vào `/forgot-password` → redirect `/dashboard`
-- [ ] Sign out từ dashboard → về `/signin`
+- [ ] Not signed in → access `/dashboard` → redirect `/signin`
+- [ ] Signed in → access `/signin` → redirect `/dashboard`
+- [ ] Signed in → access `/signup` → redirect `/dashboard`
+- [ ] Signed in → access `/forgot-password` → redirect `/dashboard`
+- [ ] Sign out from dashboard → returns to `/signin`
 
 ### G. UI/UX Consistency
 
-- [ ] Inputs/buttons cao 44px, pill shape đúng design
-- [ ] Focus ring xuất hiện khi tab bằng bàn phím
-- [ ] Error box màu đỏ (`text-red-600`), success box màu xanh (`text-green-700`)
-- [ ] Motion animation mượt, không giật
-- [ ] Nút disabled có opacity + cursor-not-allowed
-- [ ] Text loading đúng theo từng action
+- [ ] Inputs/buttons are 44px tall, pill shape per design
+- [ ] Focus ring appears when tabbing with the keyboard
+- [ ] Error box red (`text-red-600`), success box green (`text-green-700`)
+- [ ] Motion animation smooth, not jittery
+- [ ] Disabled buttons have opacity + cursor-not-allowed
+- [ ] Loading text matches each action
 
 ### H. Mobile & Accessibility Smoke
 
-- [ ] iOS Safari không auto-zoom input (font >= 16px)
-- [ ] Tap target đủ dễ bấm trên mobile (44px)
-- [ ] Enter key submit form hoạt động
-- [ ] Keyboard tab order đúng (email → password → button → links)
+- [ ] iOS Safari does not auto-zoom inputs (font >= 16px)
+- [ ] Tap targets are easy to press on mobile (44px)
+- [ ] Enter key submits the form
+- [ ] Keyboard tab order is correct (email → password → button → links)
 
 ### I. Regression Smoke (Must Pass Before Release)
 
-- [ ] Signup mới hoàn tất full flow đến verify
-- [ ] Signin account đã verify vào được dashboard
-- [ ] Forgot/reset password full flow hoạt động
-- [ ] Route guard không cho bypass auth bằng URL thủ công
-- [ ] Không có lỗi console nghiêm trọng trong auth pages
-- [ ] Không có trường hợp kẹt loading vô hạn
+- [ ] New signup completes the full flow through verify
+- [ ] Signin with verified account reaches the dashboard
+- [ ] Forgot/reset password full flow works
+- [ ] Route guard does not allow auth bypass via manual URL
+- [ ] No critical console errors on auth pages
+- [ ] No cases of being stuck in infinite loading
 
 ### QA Execution Notes
 
-- Test trên ít nhất: Chrome, Safari
-- Test mobile: iPhone viewport + Android viewport
-- Nếu dùng Supabase rate limit, chờ cooldown trước khi retest resend/reset
-- Ghi rõ bug theo format: `Page | Step | Expected | Actual | Screenshot | Console logs`
+- Test on at least: Chrome, Safari
+- Mobile testing: iPhone viewport + Android viewport
+- If using Supabase rate limit, wait for cooldown before retesting resend/reset
+- Report bugs in the format: `Page | Step | Expected | Actual | Screenshot | Console logs`
 
 ---
 
@@ -852,7 +845,7 @@ Protected page showing user profile and account information after successful aut
 - `/list-staff.txt` - Staff member data (250 staffs)
 - `/SUPABASE_MIGRATION.md` - Supabase setup and migration guide
 - `/TEST_CASES_AUTH.md` - Manual test cases for QA
-- `/CLAUDE.md` - Project memory: architectural decisions và lý do từ chối một số approach
+- `/CLAUDE.md` - Project memory: architectural decisions and reasons for rejecting certain approaches
 
 ---
 
@@ -861,43 +854,43 @@ Protected page showing user profile and account information after successful aut
 ### 2026-05-07 (Update 6 — Risk/UX Plan implementation)
 
 - Round 1 (5 subagent fixes — see `docs/RISK_UX_PLAN.md`):
-  - A.5.2 / C.4.2 / E.5.1: Show/hide password toggle ở 4 inputs
-  - A.5.3: `router.replace` thay `router.push` sau signup
-  - B.2.3: 5s timeout fallback cho `getSession()`
-  - B.4.5 / D.4.2: Spam folder hint trong success messages
+  - A.5.2 / C.4.2 / E.5.1: Show/hide password toggle on 4 inputs
+  - A.5.3: `router.replace` instead of `router.push` after signup
+  - B.2.3: 5s timeout fallback for `getSession()`
+  - B.4.5 / D.4.2: Spam folder hint in success messages
   - C.4.3: Normalize rate limit error message
   - E.2.6: PASSWORD_RECOVERY timeout 500ms → 2000ms
-  - G.3: `aria-live` cho tất cả error/success divs
-  - G.4: `useReducedMotion()` cho Framer Motion
-- Round 2 (sau review user):
+  - G.3: `aria-live` on all error/success divs
+  - G.4: `useReducedMotion()` for Framer Motion
+- Round 2 (after user review):
   - A.5.1: Custom `getPasswordStrength()` + 4-bar visual indicator
-  - C.4.1: Remember me checkbox + cookie `remember-me` driving Supabase auth cookie persistence (handler ở proxy + browser client)
-  - B.5.3 / D.4.1: Reclassify từ ⚠️ RISK → 🟢 NORMAL (Supabase đã handle đúng)
-  - B.5.2: Sửa "(>24h)" → "(>10 phút)" theo Supabase default
-- Section "UI/UX Cases — Toàn bộ": cập nhật trạng thái 13 items
-- Section "Bugs Đã Fix — Quick Reference": thêm B12–B21
-- Section "Tóm tắt số liệu": 27 fixed, 6 RISK còn tồn (skipped)
+  - C.4.1: Remember me checkbox + cookie `remember-me` driving Supabase auth cookie persistence (handler in proxy + browser client)
+  - B.5.3 / D.4.1: Reclassified from ⚠️ RISK → 🟢 NORMAL (Supabase already handles correctly)
+  - B.5.2: Fixed "(>24h)" → "(>10 minutes)" per Supabase default
+- Section "UI/UX Cases — Complete": updated status of 13 items
+- Section "Bugs Fixed — Quick Reference": added B12–B21
+- Section "Summary Statistics": 27 fixed, 6 RISK remaining (skipped)
 
-### 2026-05-07 (Update 5 — Sync với CLAUDE.md)
+### 2026-05-07 (Update 5 — Sync with CLAUDE.md)
 
-- Xóa toàn bộ references đến `sessionStorage` gate trong verify-email flow
-- Lý do: sessionStorage không share giữa tabs/thiết bị → cross-device limitation (ghi trong `CLAUDE.md`)
-- Cập nhật Sign Up page: bỏ step "Store email in sessionStorage"
-- Cập nhật Verify Email page: Step 2 chỉ còn regex validation, không còn sessionStorage check
-- Cập nhật Security Considerations section 2 và 4
-- Cập nhật Security Fixes S4
-- Cập nhật UI/UX Cases B.3: bỏ B.3.3 (sessionStorage gate FIXED), B.3.4 (URL manipulation blocked), B.3.5 (cross-tab risk); thêm B.3.3 và B.3.4 mới phản ánh behavior thực tế
-- Cập nhật QA Checklist và Testing Checklist: bỏ sessionStorage items, thêm cross-device test
-- Cập nhật Bugs Quick Reference B2/B4: làm rõ fix là regex + session ordering, không phải sessionStorage
-- Thêm `CLAUDE.md` vào Related Documentation
+- Removed all references to the `sessionStorage` gate in the verify-email flow
+- Reason: sessionStorage is not shared across tabs/devices → cross-device limitation (recorded in `CLAUDE.md`)
+- Updated Sign Up page: removed the "Store email in sessionStorage" step
+- Updated Verify Email page: Step 2 only contains regex validation, no more sessionStorage check
+- Updated Security Considerations sections 2 and 4
+- Updated Security Fixes S4
+- Updated UI/UX Cases B.3: removed B.3.3 (sessionStorage gate FIXED), B.3.4 (URL manipulation blocked), B.3.5 (cross-tab risk); added new B.3.3 and B.3.4 reflecting actual behavior
+- Updated QA Checklist and Testing Checklist: removed sessionStorage items, added cross-device tests
+- Updated Bugs Quick Reference B2/B4: clarified that the fix is regex + session ordering, not sessionStorage
+- Added `CLAUDE.md` to Related Documentation
 
 ### 2026-05-07 (Update 4 — Merge)
 
-- Merged `UI_UX_AUTH_CASES.md` vào `docs/AUTH_SYSTEM.md`
-- Thay thế phần "UI/UX Cases" dạng category (47 cases) bằng phần UI/UX Cases dạng page-based chi tiết hơn (73 cases)
-- Gộp Security Fixes + Bugs Đã Fix thành 2 section riêng biệt (không duplicate)
-- Thêm ghi chú phân biệt `sessionStorage` (email gate, không share tabs) vs auth cookie (share tabs)
-- Cập nhật summary statistics: 73 tổng cases
+- Merged `UI_UX_AUTH_CASES.md` into `docs/AUTH_SYSTEM.md`
+- Replaced the category-style "UI/UX Cases" section (47 cases) with a more detailed page-based UI/UX Cases section (73 cases)
+- Merged Security Fixes + Bugs Fixed into 2 separate sections (no duplication)
+- Added a note distinguishing `sessionStorage` (email gate, not shared across tabs) vs auth cookie (shared across tabs)
+- Updated summary statistics: 73 total cases
 
 ### 2026-05-07 (Update 3)
 

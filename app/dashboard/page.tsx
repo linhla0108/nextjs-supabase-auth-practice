@@ -6,13 +6,6 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
-interface Profile {
-  id: string;
-  username: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
-}
-
 const MOTION_PROPS = {
   initial: { opacity: 0, scale: 0.94 },
   animate: { opacity: 1, scale: 1 },
@@ -22,7 +15,6 @@ const BUTTON_WHILE_TAP = { scale: 0.95 };
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -36,14 +28,6 @@ export default function DashboardPage() {
       }
 
       setUser(currentUser);
-
-      const { data: profileData } = await supabase
-        .from("practice_profiles")
-        .select("*")
-        .eq("id", currentUser.id)
-        .single();
-
-      setProfile(profileData);
       setIsLoading(false);
     }
 
@@ -71,17 +55,15 @@ export default function DashboardPage() {
       >
         <div className="mb-[80px]">
           <h1 className="text-[40px] leading-[1.1] font-semibold tracking-[-0.28px]" style={{ fontFamily: '"SF Pro Display", system-ui, -apple-system, sans-serif' }}>Dashboard</h1>
-          <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.374px]">Chào mừng bạn đến với hệ thống quay thưởng.</p>
+          <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.374px]">Welcome to the lucky draw system.</p>
         </div>
 
         <div className="space-y-6">
           <div className="p-6 border border-[#e0e0e0] rounded-2xl">
-            <h2 className="text-[24px] font-semibold mb-4">Thông tin tài khoản</h2>
+            <h2 className="text-[24px] font-semibold mb-4">Account Information</h2>
             <div className="space-y-3 text-[17px]">
               <p><strong>Email:</strong> {user?.email}</p>
-              <p><strong>Họ tên:</strong> {profile?.full_name || "Chưa cập nhật"}</p>
-              <p><strong>Username:</strong> {profile?.username || "Chưa cập nhật"}</p>
-              <p><strong>Trạng thái email:</strong> {user?.email_confirmed_at ? "Đã xác thực" : "Chưa xác thực"}</p>
+              <p><strong>Email status:</strong> {user?.email_confirmed_at ? "Verified" : "Not verified"}</p>
             </div>
           </div>
 

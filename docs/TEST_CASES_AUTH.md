@@ -8,10 +8,9 @@
 
 - **Steps:**
   1. Navigate to `/signup`
-  2. Enter name: "John Doe"
-  3. Enter email: "<john@example.com>"
-  4. Enter password: "password123"
-  5. Click "Sign Up"
+  2. Enter email: "<john@example.com>"
+  3. Enter password: "password123"
+  4. Click "Sign Up"
 - **Expected:**
   - Success message or redirect to `/verify-email?email=john@example.com`
   - Email sent with verification link
@@ -21,40 +20,28 @@
 
 - **Steps:**
   1. Navigate to `/signup`
-  2. Enter name: "John Doe"
-  3. Enter email: "invalid-email"
-  4. Enter password: "password123"
-  5. Click "Sign Up"
+  2. Enter email: "invalid-email"
+  3. Enter password: "password123"
+  4. Click "Sign Up"
 - **Expected:** Error message "Invalid email format."
 
 #### TC-1.3: Password Too Short
 
 - **Steps:**
   1. Navigate to `/signup`
-  2. Enter name: "John Doe"
-  3. Enter email: "<john@example.com>"
-  4. Enter password: "123"
-  5. Click "Sign Up"
+  2. Enter email: "<john@example.com>"
+  3. Enter password: "123"
+  4. Click "Sign Up"
 - **Expected:** Error message "Password must be at least 6 characters."
 
-#### TC-1.4: Name Too Short
-
-- **Steps:**
-  1. Navigate to `/signup`
-  2. Enter name: "J"
-  3. Enter email: "<john@example.com>"
-  4. Enter password: "password123"
-  5. Click "Sign Up"
-- **Expected:** Error message "Name must be at least 2 characters."
-
-#### TC-1.5: Duplicate Email
+#### TC-1.4: Duplicate Email
 
 - **Steps:**
   1. Sign up with email "john@example.com"
   2. Try to sign up again with same email
 - **Expected:** Error message about email already registered
 
-#### TC-1.6: Email Already Registered - Suggest Sign In
+#### TC-1.5: Email Already Registered - Suggest Sign In
 
 - **Steps:**
   1. Sign up with email "existing@example.com"
@@ -63,7 +50,7 @@
   - Error message "Email already registered. Please use a different email or sign in."
   - User can click link to go to Sign In page
 
-#### TC-1.7: Empty Fields
+#### TC-1.6: Empty Fields
 
 - **Steps:**
   1. Navigate to `/signup`
@@ -384,10 +371,6 @@ Invalid Emails:
 Invalid Passwords:
 - 12345 (too short)
 - (empty)
-
-Invalid Names:
-- (empty)
-- A (too short)
 ```
 
 ---

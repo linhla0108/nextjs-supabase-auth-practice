@@ -9,13 +9,6 @@ vi.mock("@/lib/supabase/client", () => ({
       getUser: vi.fn(),
       signOut: vi.fn(),
     },
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(),
-        })),
-      })),
-    })),
   },
 }));
 
@@ -35,14 +28,6 @@ describe("DashboardPage - User Profile & Sign Out", () => {
     id: "test-user-id",
     email: "test@example.com",
     email_confirmed_at: "2024-01-01",
-    user_metadata: { full_name: "Test User", username: "testuser" },
-  };
-
-  const mockProfile = {
-    id: "test-user-id",
-    full_name: "Test User",
-    username: "testuser",
-    avatar_url: null,
   };
 
   beforeEach(() => {
@@ -67,7 +52,7 @@ describe("DashboardPage - User Profile & Sign Out", () => {
     });
   });
 
-  it("should load user and profile data on mount", async () => {
+  it("should load user data on mount", async () => {
     const { supabase } = await import("@/lib/supabase/client");
     const { useRouter } = await import("next/navigation");
 
@@ -78,39 +63,17 @@ describe("DashboardPage - User Profile & Sign Out", () => {
       data: { user: mockUser },
     } as any);
 
-    // Setup proper chain mock for profile query
-    const mockSingle = vi.fn().mockResolvedValueOnce({
-      data: mockProfile,
-      error: null,
-    });
-
-    const mockEq = vi.fn().mockReturnValueOnce({
-      single: mockSingle,
-    });
-
-    const mockSelect = vi.fn().mockReturnValueOnce({
-      eq: mockEq,
-    });
-
-    vi.mocked(supabase.from).mockReturnValueOnce({
-      select: mockSelect,
-    } as any);
-
     render(<DashboardPage />);
 
-    // Loading state
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
 
-    // After loading, show profile data
     await waitFor(() => {
       expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
-      expect(screen.getByText(/Test User/i)).toBeInTheDocument();
-      expect(screen.getByText(/testuser/i)).toBeInTheDocument();
-      expect(screen.getByText(/đã xác thực/i)).toBeInTheDocument();
+      expect(screen.getByText(/verified/i)).toBeInTheDocument();
     });
   });
 
-  it("should handle profile not found gracefully", async () => {
+  it("should show 'Not verified' when email is not confirmed", async () => {
     const { supabase } = await import("@/lib/supabase/client");
     const { useRouter } = await import("next/navigation");
 
@@ -118,32 +81,13 @@ describe("DashboardPage - User Profile & Sign Out", () => {
     vi.mocked(useRouter).mockReturnValue({ push: mockPush } as any);
 
     vi.mocked(supabase.auth.getUser).mockResolvedValueOnce({
-      data: { user: mockUser },
-    } as any);
-
-    // Profile returns null
-    const mockSingle = vi.fn().mockResolvedValueOnce({
-      data: null,
-      error: null,
-    });
-
-    const mockEq = vi.fn().mockReturnValueOnce({
-      single: mockSingle,
-    });
-
-    const mockSelect = vi.fn().mockReturnValueOnce({
-      eq: mockEq,
-    });
-
-    vi.mocked(supabase.from).mockReturnValueOnce({
-      select: mockSelect,
+      data: { user: { ...mockUser, email_confirmed_at: null } },
     } as any);
 
     render(<DashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
-      expect(screen.getAllByText(/chưa cập nhật/i).length).toBeGreaterThan(0);
+      expect(screen.getByText(/not verified/i)).toBeInTheDocument();
     });
   });
 
@@ -159,27 +103,8 @@ describe("DashboardPage - User Profile & Sign Out", () => {
       data: { user: mockUser },
     } as any);
 
-    // Setup proper chain mock for profile query
-    const mockSingle = vi.fn().mockResolvedValueOnce({
-      data: mockProfile,
-      error: null,
-    });
-
-    const mockEq = vi.fn().mockReturnValueOnce({
-      single: mockSingle,
-    });
-
-    const mockSelect = vi.fn().mockReturnValueOnce({
-      eq: mockEq,
-    });
-
-    vi.mocked(supabase.from).mockReturnValueOnce({
-      select: mockSelect,
-    } as any);
-
     render(<DashboardPage />);
 
-    // Wait for page to load
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /sign out/i })).not.toBeDisabled();
     });
@@ -203,7 +128,6 @@ describe("DashboardPage - User Profile & Sign Out", () => {
 
     render(<DashboardPage />);
 
-    // Should show loading
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 });
