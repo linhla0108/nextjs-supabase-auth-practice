@@ -73,7 +73,7 @@ export default function SignInPage() {
       >
         <div className="mb-[80px] text-center">
           <h1 className="text-[40px] leading-[1.1] font-semibold tracking-[-0.28px]" style={{ fontFamily: '"SF Pro Display", system-ui, -apple-system, sans-serif' }}>Sign in</h1>
-          <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.374px]">Sign in to continue participating in the event.</p>
+          <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.374px]">Sign in to your account.</p>
         </div>
 
         {error && <div role="alert" aria-live="assertive" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[15px]">{error}</div>}

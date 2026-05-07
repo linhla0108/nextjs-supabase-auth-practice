@@ -1,4 +1,4 @@
-# Lucky250 Auth System Documentation
+# Auth System Documentation
 
 ## Overview
 
@@ -10,7 +10,7 @@
 
 ### Purpose
 
-Allow existing users to sign in to access the lucky draw event.
+Allow existing users to sign in to access the application.
 
 ### Input Fields
 
@@ -45,7 +45,7 @@ Allow existing users to sign in to access the lucky draw event.
 
 ### Purpose
 
-Allow new users to create accounts and participate in the lucky draw event.
+Allow new users to create accounts.
 
 ### Input Fields
 

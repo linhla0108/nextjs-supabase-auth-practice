@@ -55,7 +55,7 @@ export default function DashboardPage() {
       >
         <div className="mb-[80px]">
           <h1 className="text-[40px] leading-[1.1] font-semibold tracking-[-0.28px]" style={{ fontFamily: '"SF Pro Display", system-ui, -apple-system, sans-serif' }}>Dashboard</h1>
-          <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.374px]">Welcome to the lucky draw system.</p>
+          <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.374px]">Welcome to the Next.js + Supabase auth practice app.</p>
         </div>
 
         <div className="space-y-6">
